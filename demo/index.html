@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wren — 视觉原型 v0.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+body {
+  background: #17161A;
+  color: #EDE7DE;
+  font-family: var(--font-sans);
+  padding: 40px 32px 80px;
+  min-height: 100vh;
+}
+
+/* ── page chrome ─────────────────────────────── */
+.head { max-width: 1720px; margin: 0 auto 32px; display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
+.head h1 { font: 400 30px/1.2 var(--font-display); letter-spacing: -.01em; }
+.head p { font-size: 13px; color: #8B8480; margin-top: 6px; max-width: 620px; line-height: 1.6; }
+.tod { display: flex; gap: 6px; background: #201F23; padding: 5px; border-radius: 999px; }
+.tod button {
+  font: 500 11px/1 var(--font-sans); letter-spacing: .1em; text-transform: uppercase;
+  padding: 9px 15px; border: 0; border-radius: 999px; cursor: pointer;
+  background: transparent; color: #8B8480; transition: all var(--duration-base) var(--ease-enter);
+}
+.tod button[aria-pressed="true"] { background: #EDE7DE; color: #17161A; }
+
+.stage { max-width: 1720px; margin: 0 auto; display: flex; gap: 28px; flex-wrap: wrap; }
+.slot { flex: 0 0 auto; }
+.slot > figcaption { font: 500 11px/1 var(--font-sans); letter-spacing: .14em; text-transform: uppercase; color: #6E6A66; margin-bottom: 12px; }
+.slot > figcaption b { color: #C09A82; font-weight: 500; }
+
+/* ── phone ───────────────────────────────────── */
+.phone {
+  width: 390px; height: 844px; border-radius: 46px; overflow: hidden;
+  position: relative; background: var(--surface);
+  box-shadow: 0 40px 90px -30px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.07);
+  color: var(--fg-primary);
+  display: flex; flex-direction: column;
+  transition: background var(--duration-slow) var(--ease-enter);
+}
+.statusbar {
+  height: 54px; flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--space-7) 0 var(--space-8); font: 600 14px/1 var(--font-sans); opacity: .9;
+}
+.statusbar .glyphs { display: flex; gap: 5px; align-items: center; }
+.statusbar .glyphs i { display: block; width: 15px; height: 10px; border-radius: 2px; background: currentColor; opacity: .75; }
+.statusbar .glyphs i:nth-child(2) { width: 14px; }
+.statusbar .glyphs i:nth-child(3) { width: 22px; border-radius: 3px; }
+.body { flex: 1; display: flex; flex-direction: column; padding: 0 var(--space-7) var(--space-8); position: relative; }
+.homebar { position: absolute; bottom: 9px; left: 50%; transform: translateX(-50%); width: 134px; height: 5px; border-radius: 3px; background: currentColor; opacity: .28; }
+
+/* ── shared atoms ────────────────────────────── */
+.eyebrow { color: var(--fg-secondary); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.eyebrow::after { content: ""; width: 24px; height: 1px; background: currentColor; opacity: .4; }
+.frost {
+  width: 64px; height: 64px; border-radius: var(--radius-full);
+  background: var(--surface-frost);   border: 1px solid var(--border-hairline);
+  display: grid; place-items: center; cursor: pointer; flex: 0 0 auto;
+  transition: transform var(--duration-base) var(--ease-enter), background var(--duration-base) var(--ease-enter);
+}
+.frost:hover { transform: scale(1.06); }
+.frost:active { transform: scale(.96); }
+.frost svg { width: 22px; height: 22px; stroke: var(--fg-primary); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.frost.lg { width: 76px; height: 76px; }
+.pill {
+  width: 100%; height: 56px; border-radius: var(--radius-full);
+  background: var(--surface-input);
+  border: 1px solid var(--border-hairline);
+  display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-3) 0 var(--space-6);
+}
+.pill span { flex: 1; font: 400 17px/1 var(--font-sans); color: var(--fg-muted); }
+.pill .mic { width: 38px; height: 38px; border-radius: 999px; background: var(--accent); display: grid; place-items: center; flex: 0 0 auto; }
+.pill .mic svg { width: 17px; height: 17px; stroke: var(--bone-50); fill: none; stroke-width: 1.8; stroke-linecap: round; }
+
+/* ── BreathOrb ───────────────────────────────── */
+.orb-wrap { display: grid; place-items: center; position: relative; }
+.orb {
+  width: 232px; height: 232px; position: relative;
+  animation: breathe var(--duration-breath) var(--ease-breath) infinite;
+}
+.orb::before, .orb::after { content: ""; position: absolute; inset: 0; border-radius: 48% 52% 51% 49% / 50% 47% 53% 50%; }
+.orb::before {
+  background: radial-gradient(circle at 36% 32%,
+    rgba(255,255,255,.80) 0%, rgba(255,252,248,.52) 26%,
+    rgba(240,205,184,.40) 52%, rgba(224,161,131,.26) 74%,
+    rgba(192,103,74,.08) 90%, rgba(192,103,74,0) 100%);
+  animation: wobble 18s ease-in-out infinite;
+}
+.orb::after {
+  background: radial-gradient(circle at 64% 70%, rgba(232,183,156,.42) 0%, rgba(232,183,156,.14) 34%, rgba(232,183,156,0) 66%);
+  animation: wobble 22s ease-in-out infinite reverse;
+}
+.orb-glow {
+  position: absolute; width: 340px; height: 340px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.34) 0%, rgba(255,255,255,0) 62%);
+  animation: breathe var(--duration-breath) var(--ease-breath) infinite;
+  pointer-events: none;
+}
+[data-tod="night"] .orb::before { background: radial-gradient(circle at 34% 30%, rgba(255,240,230,.60), rgba(232,183,156,.28) 44%, rgba(192,103,74,.30) 74%, rgba(192,103,74,0) 100%); }
+[data-tod="night"] .orb-glow { background: radial-gradient(circle, rgba(232,183,156,.20) 0%, rgba(232,183,156,0) 62%); }
+@keyframes breathe {           /* 4s inhale · 6s exhale */
+  0%   { transform: scale(.82); }
+  40%  { transform: scale(1);   }
+  100% { transform: scale(.82); }
+}
+@keyframes wobble {
+  0%, 100% { border-radius: 48% 52% 51% 49% / 50% 47% 53% 50%; }
+  33%      { border-radius: 53% 47% 46% 54% / 47% 53% 47% 53%; }
+  66%      { border-radius: 46% 54% 55% 45% / 55% 48% 52% 45%; }
+}
+.orb.sm { width: 150px; height: 150px; }
+.orb.sm ~ .orb-glow { width: 200px; height: 200px; }
+
+/* ── waveform strip ──────────────────────────── */
+.wave { display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 30px; }
+.wave i { width: 3px; border-radius: 2px; background: var(--fg-primary); opacity: .38; animation: bar 1.5s ease-in-out infinite; }
+@keyframes bar { 0%,100% { height: 5px; } 50% { height: 26px; } }
+
+/* ── screen-specific ─────────────────────────── */
+.s-welcome { align-items: center; justify-content: center; gap: 0; }
+.s-welcome .mark { font: 400 52px/1 var(--font-display); font-variation-settings: 'SOFT' 70, 'WONK' 1; letter-spacing: -.02em; }
+.s-welcome .bird { width: 34px; height: 34px; margin-bottom: 22px; opacity: .8; }
+.s-welcome .tag { position: absolute; bottom: 64px; left: 0; right: 0; text-align: center; color: var(--fg-secondary); }
+
+.s-onb { padding-top: var(--space-9); }
+.s-onb .q { text-align: center; margin-bottom: var(--space-4); }
+.s-onb .hint { text-align: center; color: var(--fg-muted); font-size: 13px; margin-bottom: auto; }
+.s-onb .foot { display: grid; place-items: center; gap: var(--space-6); padding-bottom: var(--space-6); }
+
+.s-home .top { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: var(--space-2); }
+.s-home .date { color: var(--fg-secondary); font-size: 13px; }
+.s-home .orb-wrap { flex: 1; }
+.s-home .card {
+  background: var(--surface-frost);   border: 1px solid var(--border-hairline); border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  display: flex; flex-direction: column; gap: var(--space-4); margin-bottom: var(--space-6);
+}
+.s-home .card .row { display: flex; align-items: center; gap: var(--space-4); }
+.s-home .card .row .meta { flex: 1; min-width: 0; }
+.s-home .card .row .meta em { display: block; font: 400 17px/24px var(--font-display); font-style: normal; }
+.s-home .card .row .meta small { display: block; color: var(--fg-muted); font-size: 12px; margin-top: 3px; }
+.s-home .card .track { height: 3px; border-radius: 2px; background: var(--border-hairline); position: relative; }
+.s-home .card .track::after { content: ""; position: absolute; inset: 0 62% 0 0; border-radius: 2px; background: var(--accent); }
+.s-home .card .times { display: flex; justify-content: space-between; font: 500 11px/1 var(--font-sans); color: var(--fg-muted); }
+
+.s-carry { align-items: center; text-align: center; padding-top: var(--space-9); }
+.s-carry .phrase { margin: var(--space-8) 0 0; }
+.s-carry .orb-wrap { flex: 1; align-self: stretch; }
+.s-carry .action {
+  position: relative; z-index: 2;
+  width: 100%; display: flex; align-items: center; gap: var(--space-4);
+  background: var(--surface-frost);   border: 1px solid var(--border-hairline); border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5); text-align: left; margin-bottom: var(--space-6);
+}
+.s-carry .action .box { width: 26px; height: 26px; border-radius: 8px; border: 1.5px solid var(--fg-muted); flex: 0 0 auto; }
+.s-carry .action .txt { flex: 1; }
+.s-carry .action .txt small { display: block; color: var(--fg-muted); font: 500 10px/1 var(--font-sans); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 5px; }
+.s-carry .action .txt span { font: 400 15px/21px var(--font-sans); }
+</style>
+</head>
+<body data-tod="morning">
+
+<div class="head">
+  <div>
+    <h1>Wren — 视觉原型 v0.1</h1>
+    <p>Tolan 的骨架（一屏一事 · 磨砂圆按钮 · 大衬线 · 满屏渐变 · 零 chrome），底色换成随时间走的四档渐变，焦点物换成会呼吸的 orb。呼吸节奏是真的 4 秒吸 / 6 秒呼。</p>
+  </div>
+  <div class="tod" role="group" aria-label="时段">
+    <button data-set="morning" aria-pressed="true">Morning</button>
+    <button data-set="day" aria-pressed="false">Day</button>
+    <button data-set="dusk" aria-pressed="false">Dusk</button>
+    <button data-set="night" aria-pressed="false">Night</button>
+  </div>
+</div>
+
+<div class="stage">
+
+  <!-- ── Welcome ─────────────────────────────── -->
+  <figure class="slot">
+    <figcaption>01 · <b>Welcome</b></figcaption>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span class="glyphs"><i></i><i></i><i></i></span></div>
+      <div class="body s-welcome">
+        <div class="mark">Wren</div>
+        <div class="tag t-caption">Three minutes. Then your day.</div>
+      </div>
+      <div class="homebar"></div>
+    </div>
+  </figure>
+
+  <!-- ── Onboarding ──────────────────────────── -->
+  <figure class="slot">
+    <figcaption>02 · <b>Onboarding</b> · step 4 / 8</figcaption>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span class="glyphs"><i></i><i></i><i></i></span></div>
+      <div class="body s-onb">
+        <div class="eyebrow t-caption" style="margin-bottom:var(--space-8)">A little about you</div>
+        <div class="q t-display-lg">What's taking up<br>the most room<br>in your head?</div>
+        <div class="hint">Say it out loud — a sentence is plenty.</div>
+        <div class="foot">
+          <div class="wave" id="w1"></div>
+          <div class="pill">
+            <span>Tap to speak, or type</span>
+            <div class="mic"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+          </div>
+          <div class="frost"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div>
+  </figure>
+
+  <!-- ── Home ────────────────────────────────── -->
+  <figure class="slot">
+    <figcaption>03 · <b>Home</b> · 已生成</figcaption>
+    <div class="phone">
+      <div class="statusbar"><span>7:42</span><span class="glyphs"><i></i><i></i><i></i></span></div>
+      <div class="body s-home">
+        <div class="top">
+          <div class="eyebrow t-caption">Today</div>
+          <div class="date">Tuesday, August 11</div>
+        </div>
+        <div class="orb-wrap"><div class="orb"></div><div class="orb-glow"></div></div>
+        <div class="card">
+          <div class="row">
+            <div class="meta">
+              <em>The 3pm review</em>
+              <small>Morning Prime · generated 6 min ago</small>
+            </div>
+            <div class="frost" style="width:52px;height:52px"><svg viewBox="0 0 24 24" style="width:19px;height:19px"><path d="M8 5.5v13l11-6.5-11-6.5Z" fill="currentColor" stroke="none"/></svg></div>
+          </div>
+          <div class="track"></div>
+          <div class="times"><span>1:07</span><span>2:48</span></div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div>
+  </figure>
+
+  <!-- ── Carry ───────────────────────────────── -->
+  <figure class="slot">
+    <figcaption>04 · <b>Player — 结束页</b> Carry</figcaption>
+    <div class="phone">
+      <div class="statusbar"><span>7:46</span><span class="glyphs"><i></i><i></i><i></i></span></div>
+      <div class="body s-carry">
+        <div class="eyebrow t-caption">Carry this</div>
+        <div class="phrase t-display-lg">I can take<br>the long way<br>through a sentence.</div>
+        <div class="orb-wrap" style="margin-bottom:var(--space-8)"><div class="orb sm"></div><div class="orb-glow"></div></div>
+        <div class="action">
+          <div class="box"></div>
+          <div class="txt">
+            <small>One small thing</small>
+            <span>Open the deck at 2:40 and read the first slide out loud, slowly.</span>
+          </div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div>
+  </figure>
+
+</div>
+
+<script>
+// waveform bars
+document.querySelectorAll('.wave').forEach(w => {
+  for (let i = 0; i < 34; i++) {
+    const b = document.createElement('i');
+    b.style.animationDelay = (i * 0.055).toFixed(2) + 's';
+    b.style.animationDuration = (1.1 + (i % 5) * 0.18).toFixed(2) + 's';
+    w.appendChild(b);
+  }
+});
+
+// time-of-day switcher — the Carry screen keeps its own dusk mode
+const btns = document.querySelectorAll('.tod button');
+btns.forEach(b => b.addEventListener('click', () => {
+  btns.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  document.body.dataset.tod = b.dataset.set;
+}));
+</script>
+</body>
+</html>

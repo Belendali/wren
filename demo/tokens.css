@@ -1,0 +1,98 @@
+/* Wren — design tokens
+   Source of truth: ~/wren/docs/03-VISUAL-DIRECTION.md
+   Mirrors the Figma variable structure (Primitive → Semantic). */
+
+:root {
+  /* ── Primitive · color ─────────────────────────── */
+  --bone-50:   #FDFBF7;
+  --bone-100:  #FBF4EA;
+  --bone-200:  #F3E9DA;
+  --clay-300:  #E8B79C;
+  --clay-500:  #C0674A;
+  --clay-700:  #8E4530;
+  --ink-900:   #14100E;
+  --ink-700:   #33291F;
+  --ink-500:   #6B5B4C;
+  --ink-300:   #A6968A;
+  --ink-100:   #E4DBD0;
+  --moss-500:  #6E7A5F;
+  --sky-400:   #A6C0CE;
+  --mist-200:  #E8EEF0;
+  --peach-300: #F6DAC0;
+  --peach-500: #E0A183;
+  --dusk-400:  #D99A73;
+  --plum-700:  #3A2B33;
+  --plum-900:  #241E22;
+  --night-500: #5A3A38;
+
+  /* ── Primitive · space (4pt base) ──────────────── */
+  --space-1: 4px;   --space-2: 8px;   --space-3: 12px;
+  --space-4: 16px;  --space-5: 20px;  --space-6: 24px;
+  --space-7: 32px;  --space-8: 40px;  --space-9: 56px;
+  --space-10: 72px;
+
+  /* ── Primitive · radius ────────────────────────── */
+  --radius-xs: 8px;  --radius-sm: 12px;  --radius-md: 20px;
+  --radius-lg: 28px; --radius-full: 999px;
+
+  /* ── Primitive · motion ────────────────────────── */
+  --duration-fast: 180ms;
+  --duration-base: 320ms;
+  --duration-slow: 600ms;
+  --duration-breath: 10000ms;          /* 4s in + 6s out */
+  --ease-breath: cubic-bezier(.37, 0, .63, 1);
+  --ease-enter:  cubic-bezier(.16, 1, .3, 1);
+  --ease-exit:   cubic-bezier(.4, 0, 1, 1);
+
+  /* ── Type ──────────────────────────────────────── */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
+
+  /* ── Semantic · defaults (light surfaces) ──────── */
+  --fg-primary:    var(--ink-900);
+  --fg-secondary:  color-mix(in srgb, var(--ink-500) 100%, transparent);
+  --fg-muted:      var(--ink-300);
+  --surface-frost: rgba(255, 255, 255, .28);
+  --surface-input: rgba(255, 255, 255, .72);
+  --border-hairline: rgba(20, 16, 14, .08);
+  --accent: var(--clay-500);
+}
+
+/* ── Semantic · time-of-day surfaces ─────────────── */
+[data-tod="morning"] {
+  --surface: linear-gradient(178deg, var(--bone-100) 0%, var(--peach-300) 52%, var(--peach-500) 100%);
+}
+[data-tod="day"] {
+  --surface: linear-gradient(178deg, #FAF6EF 0%, var(--mist-200) 54%, #C3D4DC 100%);
+}
+/* dusk's lower half is dark enough that the light-surface fg ramp collapses —
+   it needs its own semantic overrides, not just a swapped gradient. */
+[data-tod="dusk"] {
+  --surface: linear-gradient(178deg, #F3E3D8 0%, var(--dusk-400) 50%, #A45C46 100%);
+  --fg-primary:   #2B140C;
+  --fg-secondary: rgba(43, 20, 12, .74);
+  --fg-muted:     rgba(43, 20, 12, .54);
+  --surface-frost: rgba(255, 255, 255, .34);
+  --surface-input: rgba(255, 255, 255, .82);
+  --border-hairline: rgba(43, 20, 12, .13);
+  --accent: var(--clay-700);
+}
+[data-tod="night"] {
+  --surface: linear-gradient(178deg, var(--plum-900) 0%, var(--plum-700) 52%, var(--night-500) 100%);
+  --fg-primary:   var(--bone-50);
+  --fg-secondary: rgba(253, 251, 247, .70);
+  --fg-muted:     rgba(253, 251, 247, .45);
+  --surface-frost: rgba(255, 255, 255, .14);
+  --surface-input: rgba(255, 255, 255, .10);
+  --border-hairline: rgba(253, 251, 247, .14);
+  --accent: var(--clay-300);
+}
+
+/* ── Type ramp ───────────────────────────────────── */
+.t-display-xl { font: 400 40px/46px var(--font-display); letter-spacing: -.01em; font-variation-settings: 'SOFT' 60, 'WONK' 0; }
+.t-display-lg { font: 400 32px/40px var(--font-display); letter-spacing: -.01em; font-variation-settings: 'SOFT' 60, 'WONK' 0; }
+.t-display-md { font: 400 26px/34px var(--font-display); font-variation-settings: 'SOFT' 40, 'WONK' 0; }
+.t-title      { font: 500 20px/28px var(--font-display); }
+.t-body       { font: 400 17px/26px var(--font-sans); }
+.t-label      { font: 500 13px/18px var(--font-sans); }
+.t-caption    { font: 500 11px/16px var(--font-sans); letter-spacing: .14em; text-transform: uppercase; }

@@ -1,0 +1,362 @@
+/* ═══════════════════════════════════════════════════
+   Wren · Quiet Signal
+   设计系统直译自 Figma 的变量与样式
+   ═══════════════════════════════════════════════════ */
+
+:root {
+  /* colour */
+  --ink:      #35251F;
+  --ink-700:  #4A3529;
+  --ink-500:  #6E5546;
+  --ink-300:  #A18978;
+  --signal:   #E96F51;
+  --signal-lo:#F28A66;
+  --signal-hi:#DA5734;
+  --clay:     #E7A47E;
+  --peach:    #F6D2BE;
+  --paper:    #FFF8F1;
+  --bone:     #F4F0E8;
+
+  --fg:          var(--ink);
+  --fg-2:        rgba(53, 37, 31, .70);
+  --fg-3:        rgba(53, 37, 31, .48);
+  --hairline:    rgba(53, 37, 31, .16);
+  --frost:       rgba(255, 255, 255, .34);
+
+  /* surfaces — the four times of day */
+  /* 两套底，都来自 Figma 的填充样式：
+     默认 Surface/Morning —— 浅顶暖底，onboarding / Welcome 用
+     .clay 是那个叫 "dark" 的 —— 陶土顶浅底，Home 用，
+     因为 Home 顶上压着奶白的鸟和 wordmark，浅底会让它们消失 */
+  --surface: linear-gradient(178deg, #FFF8F1 0%, #F6D2BE 56%, #E7A47E 100%);
+  --surface-clay: linear-gradient(180deg, #C28061 0%, #E8D6CB 60%, #DFD5CF 100%);
+
+  /* press */
+  --grad-signal: linear-gradient(180deg, #F28A66 0%, #E96F51 50%, #DA5734 100%);
+  --grad-paper:  linear-gradient(180deg, #FFFFFF 0%, #FFF3E9 45%, #FBE3D2 100%);
+  --lift-strong: inset 0 -1.5px 1.5px rgba(53,37,31,.20), 0 3px 10px -2px rgba(53,37,31,.24);
+  --lift-soft:   0 3px 10px -3px rgba(53,37,31,.16);
+
+  /* type */
+  --serif: 'Fraunces', Georgia, serif;
+  --sans:  'Inclusive Sans', -apple-system, system-ui, sans-serif;
+
+  --r-sm: 12px; --r-md: 20px; --r-lg: 28px; --r-full: 999px;
+  --ease-enter: cubic-bezier(.16, 1, .3, 1);
+  --ease-breath: cubic-bezier(.37, 0, .63, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overscroll-behavior: none; }
+body {
+  overflow: hidden;
+  font-family: var(--sans);
+  color: var(--fg);
+  background: #2A211D;
+  display: grid;
+  place-items: center;
+}
+
+/* ── the device ─────────────────────────────────── */
+#phone {
+  /* color 必须在这里解析 —— 放在 body 上的话夜间模式换了 --fg 也没用，
+     子元素继承的是算好的颜色值，不是变量 */
+  color: var(--fg);
+  position: relative;
+  width: 390px; height: 844px;
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: 0 40px 90px -30px rgba(0,0,0,.65);
+}
+/* 只有真正的窄屏才铺满。桌面上永远是一台 390×844 的手机 ——
+   窗口不够高就整体缩放，不拉伸。 */
+#phone { border-radius: 46px; transform-origin: center center; }
+#phone.clay { background: var(--surface-clay); }
+@media (max-width: 430px) {
+  body { display: block; overflow: auto; }
+  #phone { width: 100vw; height: 100dvh; border-radius: 0; box-shadow: none; transform: none !important; }
+}
+
+/* the grain lives on the device, above the gradient, under everything else */
+#grain {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background-image: url('assets/grain-surface.png');
+  background-size: 512px 512px;
+  mix-blend-mode: overlay;
+  opacity: .8;
+}
+
+/* ── screens ────────────────────────────────────── */
+#stage { position: absolute; inset: 0; z-index: 2; }
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  padding: 0 32px 34px;
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+  transition: opacity .34s var(--ease-enter), transform .34s var(--ease-enter);
+  overflow: hidden auto;
+  -webkit-overflow-scrolling: touch;
+}
+.screen.on { opacity: 1; transform: none; pointer-events: auto; }
+.screen.leaving { opacity: 0; transform: translateY(-10px); }
+
+/* ── chrome ─────────────────────────────────────── */
+.statusbar {
+  position: absolute; inset: 0 0 auto; height: 54px; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px 0 40px;
+  font: 600 14px/1 var(--sans); color: var(--fg);
+  pointer-events: none;
+}
+.statusbar .g { display: flex; gap: 5px; }
+.statusbar .g i { width: 15px; height: 10px; border-radius: 3px; background: currentColor; opacity: .7; }
+.statusbar .g i:nth-child(3) { width: 22px; }
+
+.topbar { position: absolute; top: 62px; left: 28px; right: 28px; z-index: 4;
+  display: flex; align-items: center; gap: 16px; }
+.back { width: 26px; height: 26px; display: grid; place-items: center; cursor: pointer; flex: 0 0 auto; }
+.back svg { width: 16px; height: 16px; stroke: var(--fg); fill: none; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round; }
+.progress { flex: 1; height: 4px; border-radius: 999px; background: rgba(53,37,31,.22); overflow: hidden; }
+.progress i { display: block; height: 100%; border-radius: 999px; background: var(--fg); opacity: .55;
+  width: 0; transition: width .4s var(--ease-enter); }
+
+.homebar { position: absolute; bottom: 9px; left: 50%; transform: translateX(-50%);
+  width: 134px; height: 5px; border-radius: 3px; background: var(--fg); opacity: .28; z-index: 6; }
+
+/* ── type ───────────────────────────────────────── */
+.q { font: 400 27px/36px var(--serif); margin-top: 128px; }
+.q em { font-style: italic; }
+.note { font: 400 15px/22px var(--sans); color: var(--fg-3); margin-top: 12px; }
+.eyebrow { font: 500 11px/16px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-2); }
+.mirror { font: 400 26px/38px var(--serif); margin-top: 180px; white-space: pre-line; }
+.mirror i { font-style: italic; }
+
+/* ── buttons ────────────────────────────────────── */
+.btn {
+  border: 0; width: 100%; height: 58px; border-radius: var(--r-full);
+  font: 500 16px/1 var(--sans); letter-spacing: .01em; cursor: pointer;
+  display: grid; place-items: center;
+  background: var(--grad-signal); color: var(--paper);
+  box-shadow: var(--lift-strong);
+  transition: transform .16s var(--ease-enter), opacity .2s;
+}
+.btn:active { transform: scale(.98); }
+.btn[disabled] { opacity: .4; pointer-events: none; }
+.btn.paper { background: var(--grad-paper); color: var(--fg); border: 1px solid var(--hairline);
+  box-shadow: var(--lift-soft); }
+.btn.ghost { background: none; box-shadow: none; color: var(--fg); height: 44px;
+  text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 1.5px;
+  text-decoration-color: rgba(53,37,31,.42); }
+
+.chip {
+  border: 1px solid var(--hairline); border-radius: var(--r-full);
+  padding: 13px 20px; font: 500 15px/18px var(--sans); color: var(--fg);
+  background: var(--grad-paper); box-shadow: var(--lift-soft);
+  cursor: pointer; transition: transform .14s var(--ease-enter);
+}
+.chip:active { transform: scale(.97); }
+.chip.on { background: var(--grad-signal); color: var(--paper); border-color: transparent;
+  box-shadow: var(--lift-strong); }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.chips.stack { flex-direction: column; align-items: flex-start; }
+
+/* ── input ──────────────────────────────────────── */
+.pill {
+  display: flex; align-items: center; gap: 10px;
+  height: 64px; padding: 0 8px 0 26px; border-radius: var(--r-full);
+  background: var(--grad-paper); border: 1px solid var(--hairline);
+  box-shadow: inset 0 2px 3px rgba(53,37,31,.08), 0 4px 12px -2px rgba(53,37,31,.12);
+}
+.pill input {
+  flex: 1; min-width: 0; border: 0; background: none; outline: none;
+  font: 400 17px/23px var(--serif); color: var(--fg);
+}
+.pill input::placeholder { font-style: italic; color: var(--fg-3); }
+.round {
+  width: 48px; height: 48px; border-radius: 999px; border: 0; flex: 0 0 auto;
+  background: var(--grad-signal); box-shadow: var(--lift-strong);
+  display: grid; place-items: center; cursor: pointer;
+  transition: transform .16s var(--ease-enter);
+}
+.round:active { transform: scale(.94); }
+.round svg { width: 22px; height: 22px; stroke: var(--paper); fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; }
+
+.field {
+  width: 100%; border-radius: 26px; padding: 22px;
+  background: var(--grad-paper); border: 1px solid var(--hairline); box-shadow: var(--lift-soft);
+  font: 400 19px/29px var(--serif); color: var(--fg);
+  outline: none; resize: none; min-height: 150px;
+}
+
+/* ── the mark: 品牌方的实际素材，四个状态 ─────── */
+/* full      太阳 → 点 → 鸟 → 线      都在
+   listening 鸟 + 弧线                它在听你
+   flying    鸟飞上去                 它带着话走了
+   rehearse  鸟在说                   它在念给你听            */
+.hero { width: 326px; margin: 0 auto; flex: 0 0 auto; display: block; }
+.hero img { width: 100%; height: auto; display: block; }
+.hero[data-state="flying"] { width: 190px; }
+@keyframes breathe { 0% { transform: scale(.86); } 40% { transform: scale(1); } 100% { transform: scale(.86); } }
+
+/* ── waveform ───────────────────────────────────── */
+.wave { display: flex; align-items: center; justify-content: center; gap: 4px; height: 76px; }
+.wave i { width: 4px; border-radius: 999px; background: var(--signal); height: 8px;
+  transition: height .09s linear; }
+.wave.idle i { background: var(--fg); opacity: .34; }
+
+/* ── layout helpers ─────────────────────────────── */
+.grow { flex: 1; }
+.foot { margin-top: auto; display: flex; flex-direction: column; gap: 14px; padding-bottom: 6px; }
+.center { text-align: center; }
+.stack { display: flex; flex-direction: column; }
+.gap-s { gap: 10px; } .gap-m { gap: 18px; } .gap-l { gap: 28px; }
+
+/* ── person cards ───────────────────────────────── */
+.person { display: flex; align-items: center; gap: 12px; padding: 14px 16px 14px 18px;
+  border-radius: var(--r-md); background: var(--grad-paper); border: 1px solid var(--hairline);
+  box-shadow: var(--lift-soft); }
+.person .who { flex: 1; min-width: 0; }
+.person .who b { display: block; font: 400 18px/24px var(--serif); }
+.person .who span { display: block; font: 400 14px/19px var(--sans); color: var(--fg-3); margin-top: 3px; }
+.person .x { font-size: 20px; color: var(--fg-3); cursor: pointer; line-height: 1; }
+.dashed { border: 1.4px dashed var(--hairline); border-radius: var(--r-md); background: none;
+  padding: 17px; font: 500 15px/20px var(--sans); color: var(--fg-2); cursor: pointer; width: 100%; }
+
+/* ── vagueness mark (the proofreader's underline) ─ */
+.vague { text-decoration: underline wavy var(--signal); text-underline-offset: 6px;
+  text-decoration-thickness: 2px; cursor: pointer; }
+.suggests { margin-top: 16px; display: flex; flex-direction: column; gap: 9px; align-items: flex-start; }
+.suggests .chip { font-family: var(--serif); font-weight: 400; font-size: 15px; }
+.suggests .chip::before { content: '+ '; color: var(--signal); font-family: var(--sans); }
+
+/* ── player ─────────────────────────────────────── */
+.line { font: 400 26px/36px var(--serif); }
+.scrub { height: 3px; border-radius: 2px; background: var(--hairline); position: relative; }
+.scrub i { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: var(--signal); width: 0; }
+.times { display: flex; justify-content: space-between; font: 500 11px/16px var(--sans); color: var(--fg-3); }
+.transport { display: flex; align-items: center; justify-content: center; gap: 32px; }
+.big {
+  width: 84px; height: 84px; border-radius: 999px; border: 0; cursor: pointer;
+  background: var(--grad-signal); box-shadow: var(--lift-strong);
+  display: grid; place-items: center;
+}
+.big svg { width: 30px; height: 30px; fill: var(--paper); }
+.ic { width: 30px; height: 30px; cursor: pointer; }
+.ic svg { width: 100%; height: 100%; stroke: var(--fg); fill: none; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── tab bar ────────────────────────────────────── */
+.tabs {
+  position: absolute; left: 32px; right: 32px; bottom: 24px; height: 68px; z-index: 5;
+  border-radius: 999px; background: var(--grad-paper); border: 1px solid var(--hairline);
+  box-shadow: 0 10px 28px -4px rgba(53,37,31,.18);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 34px;
+}
+.tabs button { background: none; border: 0; cursor: pointer; padding: 8px; }
+.tabs svg { width: 24px; height: 24px; stroke: var(--fg); fill: none; stroke-width: 1.7;
+  opacity: .38; stroke-linecap: round; stroke-linejoin: round; }
+.tabs button.on svg { opacity: 1; }
+.tabs button.on svg.filled { fill: var(--fg); stroke: none; }
+
+/* ── cards ──────────────────────────────────────── */
+.card { border-radius: var(--r-lg); overflow: hidden; position: relative;
+  background: var(--frost); border: 1px solid var(--hairline); box-shadow: var(--lift-soft); }
+.rail { display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 -32px; padding: 0 32px 8px; }
+.rail::-webkit-scrollbar { display: none; }
+.sess { flex: 0 0 246px; border-radius: var(--r-lg); overflow: hidden; background: var(--grad-paper);
+  border: 1px solid var(--hairline); box-shadow: var(--lift-soft); cursor: pointer; }
+.sess .art { height: 132px; background: var(--grad-signal); position: relative; }
+.sess .art::after { content: ''; position: absolute; inset: 0;
+  background-image: url('assets/grain-card.png'); background-size: 512px; mix-blend-mode: overlay; opacity: .6; }
+.sess .body { padding: 16px 18px 18px; }
+.sess .body small { font: 500 11px/16px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-3); }
+.sess .body p { font: 400 19px/26px var(--serif); margin-top: 7px; }
+
+/* ── misc ───────────────────────────────────────── */
+.wordmark { font: 400 46px/1 var(--serif); letter-spacing: -.02em; }
+.tag { font: italic 400 19px/28px var(--serif); color: var(--fg-2); }
+.sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: var(--paper); border-radius: 30px 30px 0 0; padding: 28px 30px 34px;
+  transform: translateY(110%); transition: transform .36s var(--ease-enter);
+  box-shadow: 0 -12px 40px rgba(53,37,31,.2);
+}
+.sheet.on { transform: none; }
+.scrim { position: absolute; inset: 0; z-index: 19; background: rgba(23,14,10,.5);
+  opacity: 0; pointer-events: none; transition: opacity .3s; }
+.scrim.on { opacity: 1; pointer-events: auto; }
+.sheet input, .sheet textarea {
+  width: 100%; border: 0; outline: none; border-radius: 16px; background: #F5F1E9;
+  padding: 16px 20px; font: 400 16px/22px var(--sans); color: var(--ink); margin-top: 12px; resize: none;
+}
+.toast { position: absolute; left: 32px; right: 32px; bottom: 110px; z-index: 30;
+  background: var(--ink); color: var(--paper); border-radius: 18px; padding: 14px 18px;
+  font: 400 14px/20px var(--sans); opacity: 0; transform: translateY(10px);
+  transition: all .3s var(--ease-enter); pointer-events: none; }
+.toast.on { opacity: 1; transform: none; }
+
+/* 照片打底的屏（Story Intro / Player）—— 不是夜间模式，
+   是这一屏本来就压在一张虚化的照片上，所以文字要浅 */
+.screen.on-photo {
+  --fg: var(--paper);
+  --fg-2: rgba(255,248,241,.72);
+  --fg-3: rgba(255,248,241,.50);
+  --hairline: rgba(255,248,241,.20);
+  color: var(--paper);
+}
+
+/* ── scene：点进去之后还在同一张图里 ──────────── */
+.scene { position: absolute; inset: 0; z-index: -1; overflow: hidden; border-radius: inherit; }
+.scene .shot {
+  position: absolute; inset: -60px -50px;
+  background-size: cover; background-position: center 30%;
+  filter: blur(42px) saturate(.9);
+  transform: scale(1.06);
+}
+.scene .dim { position: absolute; inset: 0; background: rgba(14, 9, 8, .48); }
+.scene .vig {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(11,8,6,.55) 0%, rgba(11,8,6,0) 32%,
+                                       rgba(11,8,6,0) 46%, rgba(11,8,6,.80) 100%);
+}
+/* 卡片的 art 现在放照片，颗粒层要退一点，不然照片会脏 */
+.sess .art::after { opacity: .28; }
+
+/* ── 白底组件的文字永远是墨色 ────────────────────
+   chip / 次级按钮 / 输入框 / 卡片的底在夜间模式下依然是白的，
+   文字却跟着 --fg 翻成了纸白 —— 白字压白底，全没了。
+   凡是自带浅色背景的组件，一律锁死墨色，不参与模式切换。   */
+.chip:not(.on),
+.btn.paper,
+.pill,
+.pill input,
+.field,
+.person,
+.dashed,
+.sess .body,
+.sheet,
+.tabs { color: var(--ink); }
+
+.pill input::placeholder { color: rgba(53, 37, 31, .45); }
+.person .who span,
+.sess .body small { color: rgba(53, 37, 31, .52); }
+.person .x,
+.dashed { color: rgba(53, 37, 31, .58); }
+.tabs svg { stroke: var(--ink); }
+.tabs button.on svg.filled { fill: var(--ink); stroke: none; }
+.chip:not(.on) { border-color: rgba(53, 37, 31, .16); }
+
+/* ── 顶端压在陶土色上的东西用奶白 ─────────────── */
+/* 奶白只在陶土底上成立 */
+#phone.clay .brand-top { color: var(--paper); }
+#phone.clay .brand-top .ic svg { stroke: var(--paper); }
+
+/* ── Welcome：标记 + 名字 + 一句，按钮后到 ────── */
+.mark-img { width: 96px; height: 96px; margin: 0 auto; display: block; }
+.fade-up { opacity: 0; transform: translateY(10px); animation: fadeUp .7s var(--ease-enter) forwards; }
+@keyframes fadeUp { to { opacity: 1; transform: none; } }

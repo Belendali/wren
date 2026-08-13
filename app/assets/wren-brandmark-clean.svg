@@ -1,0 +1,9 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Wren Quiet Signal — Clean Brandmark</title>
+  <path id="tile" d="M89 55C66 62 54 84 55 116L59 381C60 420 82 447 122 453C196 459 319 456 390 451C430 448 452 422 454 383L451 113C450 77 428 58 390 55C306 50 169 49 89 55Z" fill="#35251F"/>
+  <circle cx="143" cy="139" r="37" fill="#E96F51"/>
+  <path d="M187 319L126 290L166 279L139 252L207 289L217 317L187 319Z" fill="#FFF8F1"/>
+  <path d="M174 320C188 289 213 253 253 232C279 218 309 220 327 238C338 248 345 259 350 269L381 279L349 293C348 321 333 344 309 357C279 374 239 373 207 354C193 346 182 335 174 320Z" fill="#FFF8F1"/>
+  <circle cx="311" cy="253" r="7" fill="#35251F"/>
+  <path d="M78 377H328C340 377 346 371 351 359C356 348 361 342 368 342C377 342 382 352 388 364C394 374 402 377 414 377H435" stroke="#FFF8F1" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

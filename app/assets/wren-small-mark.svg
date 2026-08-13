@@ -1,0 +1,9 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Wren Quiet Signal — Small Mark</title>
+  <rect x="6" y="6" width="116" height="116" rx="25" fill="#35251F"/>
+  <circle cx="34" cy="34" r="10" fill="#E96F51"/>
+  <path d="M44 77L28 69L39 66L32 59L50 69L53 77H44Z" fill="#FFF8F1"/>
+  <path d="M41 77C46 65 56 57 67 55C76 54 82 58 86 66L96 70L87 74C86 84 77 91 66 91C55 91 46 86 41 77Z" fill="#FFF8F1"/>
+  <circle cx="78" cy="64" r="2.2" fill="#35251F"/>
+  <path d="M18 98H84C90 98 92 89 96 89C100 89 101 98 108 98H112" stroke="#FFF8F1" stroke-width="4" stroke-linecap="round"/>
+</svg>
