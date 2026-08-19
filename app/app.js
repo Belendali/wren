@@ -132,27 +132,18 @@ function setTab(name) {
    ONBOARDING —— 数据驱动
    ═══════════════════════════════════════════════ */
 const STEPS = [
-  { k: 'city',     type: 'text',  q: 'Where do you live?', ph: 'Seattle' },
   { k: 'name',     type: 'text',  q: 'What should Wren\ncall you?', note: 'Wren says it out loud before it goes.', ph: 'Maya' },
-  { k: 'kids',     type: 'choice',q: 'Do you have kids?', note: 'It changes what your mornings look like.', opts: ['Yes', 'No'] },
   { k: 'desire',   type: 'voice', q: '{name}, what are you\nhoping changes\nright now?', ph: 'Confidence, calm, a decision…' },
-  { k: 'why',      type: 'voice', q: 'Why does this matter\nso much right now?', ph: 'What would change if it did?' },
   { k: '_mirror1', type: 'mirror',body: 'I can hear how much this one matters, {name}.\n\nYou said it twice without noticing.' },
-  { k: 'obstacle', type: 'voice', q: 'What feels like the\nbiggest thing standing\nin your way?', ph: 'Doubt, timing, money, fear…' },
   { k: '_people',  type: 'people',q: 'Who are the people\nWren should know\nmatter most to you?', note: 'Wren carries their names too.' },
   { k: 'work',     type: 'text',  q: 'What do you do\nfor work?', ph: 'Product designer' },
-  { k: 'workFeel', type: 'choice',q: 'How do you feel\nabout your work?', stack: true,
-    opts: ['Love it', 'It’s fine for now', 'I’m ready for something new', 'I’m building something on the side'] },
-  { k: 'about',    type: 'voice', q: 'Since we’ve never met,\n{name} — what should\nWren know about you?', ph: 'I am a…' },
-  { k: 'past',     type: 'voice', q: 'Is there anything from\nyour past that still\nshapes this?', ph: 'Only share what feels relevant…' },
-  { k: '_mirror2', type: 'mirror',body: 'I’ve got all of that now, {name}.\n\nOne more thing — and it’s the only one that has to be out loud.' },
-  { k: '_carries', type: 'mirror',body: 'Now the part Wren takes up.\n\n<i>Tomorrow morning, or ten years out</i> — the bird flies either way.\n\nSay it clearly. Clear things travel further.' }
+  { k: '_mirror2', type: 'mirror',body: 'One more, {name}. The big one.\n\n<i>Don’t be careful with it.</i>' }
 ];
 const fill = (s) => (s || '').replace(/\{name\}/g, S.name || 'you');
 
 function stepScreen({ i = 0 }) {
   const step = STEPS[i];
-  const pct = (i + 1) / (STEPS.length + 3);
+  const pct = (i + 1) / (STEPS.length + 2);
   const next = () => (i + 1 < STEPS.length) ? go('step', { i: i + 1 }) : go('sayit');
   const back = () => i === 0 ? go('welcome') : go('step', { i: i - 1 });
   const wrap = el('div', {}, topbar(pct, back));
@@ -254,11 +245,11 @@ function micInto(input, done) {
 let draft = { text: '', mode: 'thing' };
 
 function sayitScreen() {
-  const pct = (STEPS.length + 1) / (STEPS.length + 3);
+  const pct = (STEPS.length + 1) / (STEPS.length + 2);
   return el('div', {},
     topbar(pct, () => go('step', { i: STEPS.length - 1 })),
-    el('h1.q', { html: 'What do you want<br>Wren to carry up?' }),
-    el('p.note', {}, 'Out loud. Wren can’t carry what it hasn’t heard.'),
+    el('h1.q', { html: 'What does your dream<br>life look like?' }),
+    el('p.note', {}, 'The house. The morning. Who’s there.\nOut loud — Wren can’t carry what it hasn’t heard.'),
     el('div.grow'),
     el('div.stack.center.gap-m', { style: { paddingBottom: '20px' } },
       waveBars(28, false),
@@ -294,7 +285,7 @@ function listeningScreen() {
 
   return el('div', {},
     topbar(null, () => { Speech.stopListening(); clearInterval(tick); Speech.stopMeter(); go('sayit'); }),
-    el('h1.q', { html: 'What do you want<br>Wren to carry up?', style: { opacity: '.42' } }),
+    el('h1.q', { html: 'What does your dream<br>life look like?', style: { opacity: '.42' } }),
     live,
     el('div.grow'),
     el('div.stack.gap-m', { style: { paddingBottom: '18px' } },
@@ -327,10 +318,10 @@ function transcribedScreen() {
   field.addEventListener('blur', check);
   setTimeout(check, 200);
 
-  const pct = (STEPS.length + 2) / (STEPS.length + 3);
+  const pct = (STEPS.length + 2) / (STEPS.length + 2);
   return el('div', {},
     topbar(S.onboarded ? null : pct, () => go(S.onboarded ? 'home' : 'sayit')),
-    el('h1.q', { html: 'What do you want<br>Wren to carry up?' }),
+    el('h1.q', { html: 'What does your dream<br>life look like?' }),
     el('p.eyebrow', { style: { marginTop: '22px' } }, 'Wren heard'),
     el('div', { style: { marginTop: '10px' } }, field),
     box,
@@ -339,9 +330,10 @@ function transcribedScreen() {
       el('button.btn', { onclick: () => {
         draft.text = field.value.trim();
         if (!draft.text) return toast('Wren needs something to carry.');
+        if (!S.onboarded) { S.dream = draft.text; draft.mode = 'dream'; }
         S.facts = [...new Set([...(S.facts || []), draft.text])].slice(-12);
         save();
-        go(S.onboarded ? 'generating' : 'caught');
+        go('generating');
       }}, 'That’s it'))
   );
 }
@@ -542,6 +534,7 @@ function playerScreen({ i = 0 }) {
       S.sessions.push({ intent: draft.text, mode: draft.mode, carry: scriptObj.carry,
                         mins: Math.round(scriptObj.seconds / 60) + ' min', at: Date.now() });
       save();
+      if (!S.onboarded) { setTimeout(() => go('promise'), 900); return; }
       toast('Wren’s up there with the rest of it.');
     }
   });

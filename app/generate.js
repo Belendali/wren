@@ -94,12 +94,16 @@ const Wren = (() => {
     return s.split(/[,.;—]/)[0].trim();
   }
 
+  /* 梦境里只放亲密关系。把经理写进她的梦想厨房，整段就废了。 */
+  const INTIMATE = /\b(partner|husband|wife|boyfriend|girlfriend|fianc\w*|spouse|mum|mom|mother|dad|father|sister|brother|twin|son|daughter|kid|child|best friend|friend|dog|cat)\b/i;
+  const intimateOf = (people) => (people || []).find(x => INTIMATE.test(x.note || '')) || null;
+
   function script(profile, intent, mode) {
     const name = profile.name || 'you';
     const day = DAYS[new Date().getDay()];
     const phrase = keyPhrase(intent);
     const anchor = (profile.bodyAnchor || 'chest').toLowerCase();
-    const who = (profile.people || [])[0];
+    const who = mode === 'dream' ? intimateOf(profile.people) : (profile.people || [])[0];
     const s = [];
 
     /* Land — 叫名字，报今天，把那件事说出口 */
@@ -108,6 +112,10 @@ const Wren = (() => {
     if (mode === 'state') {
       s.push({ text: `Nothing in particular is asking for you today. That's its own kind of day.`, pause: 1.6 });
       s.push({ text: `You said you wanted to be ${intent}. So that's what we're carrying up.`, pause: 2.0 });
+    } else if (mode === 'dream') {
+      s.push({ text: `You told me what it looks like.`, pause: 1.4 });
+      s.push({ text: `${phrase}.`, pause: 2.2 });
+      s.push({ text: `Wren has all of it. It went up with the whole thing, not the careful version.`, pause: 2.0 });
     } else {
       s.push({ text: `You said: ${phrase}.`, pause: 2.0 });
       s.push({ text: `Wren has that. It's already gone up with it.`, pause: 1.8 });
@@ -123,7 +131,13 @@ const Wren = (() => {
     s.push({ text: `Let it come down half a centimetre. Not all the way. Just half.`, pause: 3.6 });
 
     /* See / Hold — 具体场景，或平常日子的状态 */
-    if (mode === 'state') {
+    if (mode === 'dream') {
+      s.push({ text: `Now put yourself inside it.`, pause: 2.2 });
+      s.push({ text: `Not looking at it from here. Standing in it.`, pause: 2.6, bird: true });
+      s.push({ text: `${capital(phrase)}.`, pause: 2.6 });
+      if (who) s.push({ text: `${who.name} is somewhere in it. You can hear them.`, pause: 2.4 });
+      s.push({ text: `It's an ordinary Tuesday there. That's how you know it's real — nobody's celebrating.`, pause: 3.2 });
+    } else if (mode === 'state') {
       s.push({ text: `Now picture the most ordinary hour of today. The middle of the afternoon. Nothing happening.`, pause: 2.6 });
       s.push({ text: `You're ${intent} in it. Not performing it. Just carrying it, the way you carry your own name.`, pause: 3.0, bird: true });
       s.push({ text: `Nobody notices. That's the point. It isn't for anybody.`, pause: 3.0 });
@@ -152,6 +166,13 @@ const Wren = (() => {
 
   function carryLine(p, intent, mode) {
     if (mode === 'state') return `I can be ${intent} without anyone noticing.`;
+    if (mode === 'dream') {
+      const t = (intent || '').toLowerCase();
+      if (/house|home|apartment|kitchen/.test(t)) return `I am allowed to want the whole house.`;
+      if (/money|rich|\$|salary|income/.test(t))  return `I am allowed to want the whole amount.`;
+      if (/quiet|slow|calm|peace/.test(t))        return `The quiet version counts as ambition too.`;
+      return `I am allowed to want it exactly like that.`;
+    }
     const t = (intent || '').toLowerCase();
     if (/fast|quick|rush/.test(t)) return `I can take the long way through a sentence.`;
     if (/apolog/.test(t))          return `I can start without saying sorry.`;
@@ -166,13 +187,14 @@ const Wren = (() => {
   /* 三个 vision 卡：同一件事的三种进法 */
   function visions(profile, intent, mode) {
     const base = script(profile, intent, mode);
+    const D = mode === 'dream';
     const alt = [
       { title: base.carry, tone: 'steady', mins: '3 min' },
-      { title: mode === 'state'
-          ? `Nobody needs anything from me right now.`
+      { title: D ? `A Tuesday morning, already there.`
+          : mode === 'state' ? `Nobody needs anything from me right now.`
           : `I say the hard thing in one clean sentence.`, tone: 'plain', mins: '2 min' },
-      { title: mode === 'state'
-          ? `The afternoon can be slow and still count.`
+      { title: D ? `The first hour, before anyone's up.`
+          : mode === 'state' ? `The afternoon can be slow and still count.`
           : `I let the pause sit there without filling it.`, tone: 'quiet', mins: '90 sec' }
     ];
     return { base, alt };
