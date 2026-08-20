@@ -31,13 +31,14 @@ const API = (() => {
     return caps;
   }
 
-  /* 够不够具体。后端不在就一律放行 —— 宁可少提议，也不能拦住她。 */
+  /* 够不够具体。后端不在就用本地那套正则判定 —— 判不出来一律放行，
+     宁可少提议一次，也不能拦住她。 */
   async function clarify(intent, profile) {
-    if (caps.offline) return { ok: true, source: 'offline' };
+    if (caps.offline) return Offline.clarify(intent, profile);
     try {
       return await post('api/clarify', { intent, profile }, 30000);
     } catch (_) {
-      return { ok: true, source: 'offline' };
+      return Offline.clarify(intent, profile);
     }
   }
 

@@ -132,5 +132,49 @@ const Offline = (() => {
     };
   }
 
-  return { script };
+  /* ── 够不够具体 —— wren/generate.py 里 clarify_locally() 的 JS 版 ──
+     只要有以下任意一项就放行。绝不强制要求时间：
+     「不在开口前先道歉」没有日期，但它极其具体，必须过。 */
+  const TIME = /\b(today|tonight|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|morning|afternoon|evening|next week|this week|month|years?|spring|summer|autumn|fall|winter|january|february|march|april|may|june|july|august|september|october|november|december|\d{1,2}\s?(am|pm))\b/i;
+  const BEHAVIOUR = /\b(say|says|said|speak|speaking|talk|talking|ask|asking|walk|walking|stop|stopping|start|starting|leave|leaving|call|calling|tell|telling|send|sending|show up|apolog\w*|answer|answering|finish|finishing|present|presentation|hold|holding|put down|pick up|sit|stand|breathe|slow down|look up)\b/i;
+  const SENSORY = /\b(feels?|feeling|sounds?|looks?|smells?|quiet|loud|warm|cold|steady|light|heavy)\b/i;
+  const PLACE = /\b(room|office|kitchen|car|desk|stage|table|door|hallway|stairwell|studio|gym|street|house|home|apartment|flat|bedroom|garden|hall|lobby|clinic|classroom)\b/i;
+
+  function clarify(intent, profile = {}) {
+    const text = (intent || '').trim();
+    if (!text) return { ok: false, reflection: '', options: [], source: 'offline' };
+
+    const names = (profile.people || []).map(p => p.name).filter(Boolean);
+    const hasName = names.some(n => new RegExp('\\b' + n + '\\b', 'i').test(text));
+    const hasProper = /(?!^)\b[A-Z][a-z]{2,}\b/.test(text.replace(/^\W+/, ''));
+
+    const anchored = TIME.test(text) || hasName || hasProper
+                  || PLACE.test(text) || BEHAVIOUR.test(text) || SENSORY.test(text);
+    if (anchored) return { ok: true, reflection: '', options: [], source: 'offline' };
+
+    const low = text.toLowerCase();
+    let options;
+    if (/money|rich|wealth/.test(low)) {
+      options = ["enough that rent week isn't a week", 'leaving without a plan B'];
+    } else if (/confiden|brave|nervous|scared/.test(low)) {
+      const who = names[0];
+      options = ['not apologising before I speak' + (who ? ' to ' + who : ''),
+                 'finishing the sentence I started'];
+    } else if (/happy|peace|calm|better/.test(low)) {
+      options = ["a morning that doesn't start behind", 'putting the phone face down at dinner'];
+    } else {
+      const first = (profile.desire || '').split(',')[0].trim();
+      options = [first, "one afternoon this week where it's already true"].filter(Boolean).slice(0, 2);
+    }
+
+    return {
+      ok: false,
+      // 不说「太模糊」。说：这个我能带，不过……
+      reflection: 'I can carry that.\nIt flies further if I know what it looks like.',
+      options: options.slice(0, 2),
+      source: 'offline'
+    };
+  }
+
+  return { script, clarify };
 })();

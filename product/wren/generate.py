@@ -163,7 +163,7 @@ _BEHAVIOUR = re.compile(
     re.I,
 )
 _SENSORY = re.compile(r"\b(feels?|feeling|sounds?|looks?|smells?|quiet|loud|warm|cold|steady|light|heavy)\b", re.I)
-_PLACE = re.compile(r"\b(room|office|kitchen|car|desk|stage|table|door|hallway|stairwell|studio|gym|street)\b", re.I)
+_PLACE = re.compile(r"\b(room|office|kitchen|car|desk|stage|table|door|hallway|stairwell|studio|gym|street|house|home|apartment|flat|bedroom|garden|hall|lobby|clinic|classroom)\b", re.I)
 _VAGUE = re.compile(
     r"\b(money|rich|wealth|happy|happiness|better|good|great|confident|confidence|success"
     r"|successful|healthy|health|love|peace|calm|freedom|free|everything|things|life)\b",
