@@ -319,6 +319,7 @@ function listeningScreen() {
     live.innerHTML = '';
     live.append(text || '');
     live.append(el('i.cursor'));
+    live.scrollTop = live.scrollHeight;   // 封了高度，最新那句要自己滚上来
   };
   paint('');
 
@@ -366,17 +367,16 @@ function heardScreen() {
 
   return el('div.speak', {},
     el('div.head', {}, el('p.wordmark', {}, 'Wren')),
-    el('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '102px', width: '330px' } },
-      el('div.heard', {},
-        el('p.q', {}, `${S.profile.name}, what do you want to manifest today?`),
-        el('p.caption.cap', {}, 'Wren heard'),
-        el('div.heard-field', {}, field),
-        el('p.heard-hint', {}, 'Tap to fix anything it misheard.'),
-        el('button.chip.again', {
-          type: 'button',
-          onclick: () => { draft.text = ''; go('listening'); }
-        }, icon('mic-18.svg'), 'Say it again')),
-      el('button.btn', { type: 'button', onclick: go_ }, "That's it")));
+    el('div.heard', {},
+      el('p.q', {}, `${S.profile.name}, what do you want to manifest today?`),
+      el('p.caption.cap', {}, 'Wren heard'),
+      el('div.heard-field', {}, field),
+      el('p.heard-hint', {}, 'Tap to fix anything it misheard.'),
+      el('button.chip.again', {
+        type: 'button',
+        onclick: () => { draft.text = ''; go('listening'); }
+      }, icon('mic-18.svg'), 'Say it again')),
+    el('button.btn.speak-cta', { type: 'button', onclick: go_ }, "That's it"));
 }
 
 /* ══════════════════════════════════════════════════

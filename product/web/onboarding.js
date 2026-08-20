@@ -173,14 +173,22 @@ const Onboarding = (() => {
   /* 就地口述：压一层遮罩 + 波形，说完把文字填回输入框 */
   function dictate(input, paint) {
     const bars = waveBars(26);
-    const label = el('p.label.center', { style: { color: 'var(--fg-muted)', marginTop: '14px' } }, "Wren's listening");
-    const box = el('div.dictate', {}, bars, label);
-    const scrim = el('div.scrim.on', { onclick: () => Speech.stopListening() });
+    const heard = el('p.dictate-live', {});
+    const stop = () => Speech.stopListening();
+    // ⚠ 必须有一个看得见的停止键。只靠「点遮罩结束」的话，
+    //   她录完了会发现屏幕上没有任何可按的东西 —— 等于卡住。
+    const box = el('div.dictate', {},
+      heard,
+      bars,
+      el('p.label.center', { style: { color: 'var(--fg-muted)', margin: '14px 0 20px' } }, "Wren's listening"),
+      el('button.mic-big', { type: 'button', onclick: stop }, el('div.square')),
+      el('p.dictate-hint', {}, 'Tap when you\u2019re done'));
+    const scrim = el('div.scrim.on', { onclick: stop });
     $('#phone').append(scrim, box);
     driveWave(bars);
     const done = () => { Speech.stopMeter(); scrim.remove(); box.remove(); paint && paint(); };
     Speech.listen({
-      onPartial: t => { input.value = t; },
+      onPartial: t => { input.value = t; heard.textContent = t; heard.scrollTop = heard.scrollHeight; },
       onFinal: t => { if (t) input.value = t; done(); },
       onError: () => { done(); toast('麦克风用不了 —— 打字也行'); }
     });
@@ -285,7 +293,10 @@ const Onboarding = (() => {
       timer.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
     }, 500);
 
-    const paint = (t) => { live.innerHTML = ''; live.append(t || ''); live.append(el('i.cursor')); };
+    const paint = (t) => {
+      live.innerHTML = ''; live.append(t || ''); live.append(el('i.cursor'));
+      live.scrollTop = live.scrollHeight;   // 封了高度，最新那句要自己滚上来
+    };
     paint('');
     const cleanup = () => { clearInterval(tick); Speech.stopMeter(); };
     const finish = (t) => {
@@ -304,7 +315,7 @@ const Onboarding = (() => {
     return el('div.ob', {},
       topbar('dream', () => { Speech.stopListening(); cleanup(); go('ob-dream'); }),
       el('h1.ob-q.dim', { html: 'What does your dream<br>life look like?' }),
-      el('div.speaking ob-live', {}, live),
+      el('div.ob-live', {}, live),
       el('div.ob-mic-block', {},
         bars, timer,
         el('p.label.center', { style: { color: 'var(--fg-muted)' } }, "Wren's listening"),

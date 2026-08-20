@@ -350,12 +350,19 @@ em, .ital {
 /* ══════════════════════════════════════════════════
    02 · Home speak / 03 · Speak clear / 04 · Speak not clear
    ══════════════════════════════════════════════════ */
+/* 和 .ob 同一条规矩：最后一组贴底、容器可滚。
+   844 时 gap 仍是设计稿的 64，矮屏时走 vh 那一支收。 */
 .speak {
   position: relative; z-index: 2;
   display: flex; flex-direction: column; align-items: center;
   height: 100%;
-  gap: 64px;
+  gap: min(64px, 8vh);
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-bottom: min(100px, 12vh);   /* 844 时 100 = 设计稿的余量 */
 }
+.speak::-webkit-scrollbar { display: none; }
+.speak > :last-child { margin-top: auto; }
 .speak > .head { width: 100%; padding: 62px 24px 0; }
 
 .transcript { width: 322px; }
@@ -372,14 +379,20 @@ em, .ital {
 .speaking .q { top: 0; }
 .speaking .live { top: 114px; }
 
-.transcript .live, .speaking .live {
+.transcript .live, .speaking .live, .ob-live .live {
   margin: 0;
+  /* 纯展示文字，永远不该拦住下面的按钮 */
+  pointer-events: none;
+  /* ⚠ 必须封顶。没有上限的话，说得长一点这段文字就往下长，
+     把下面的停止键整个盖住 —— 看着还在，按不动。 */
+  max-height: min(132px, 16vh);   /* 844 时四行；矮屏少几行，给按钮让位 */
+  overflow: hidden;
   font: 400 23px/33px var(--serif);
   font-variation-settings: var(--wonk);
   color: var(--fg-primary);
   min-height: 33px;
 }
-.transcript .live .cursor, .speaking .live .cursor {
+.transcript .live .cursor, .speaking .live .cursor, .ob-live .live .cursor {
   display: inline-block;
   width: 2px; height: 26px;
   margin-left: 2px;
@@ -391,7 +404,7 @@ em, .ital {
 @keyframes blink { 50% { opacity: 0; } }
 
 .transcript .reflect {
-  margin: 42px 0 0;
+  margin: min(42px, 5vh) 0 0;
   font: 400 27px/36px var(--serif);
   font-variation-settings: var(--wonk);
   color: var(--fg-primary);
@@ -400,19 +413,21 @@ em, .ital {
 }
 .offer-chips {
   display: flex; flex-direction: column; align-items: flex-start;
-  gap: 10px; margin-top: 42px; width: 322px;
+  gap: 10px; margin-top: min(42px, 5vh); width: 322px;
 }
 
+/* 顺排。844 时各项仍落在 0 / 118 / 146 / 332 / 374，矮屏时输入框自己收。 */
 .heard {
   position: relative;
-  width: 322px; height: 418px;
+  width: 326px;
+  min-height: 0;
+  display: flex; flex-direction: column; align-items: flex-start;
 }
-.heard > * { position: absolute; left: 0; margin: 0; }
-.heard .q { top: 0; }
-.heard .cap { top: 118px; color: var(--fg-secondary); }
-.heard .heard-field { top: 146px; }
-.heard .heard-hint { top: 332px; }
-.heard .again { top: 374px; }
+.heard > * { margin: 0; }
+.heard .cap { margin-top: 46px; color: var(--fg-secondary); }
+.heard .heard-field { margin-top: 12px; flex: 0 1 172px; min-height: 96px; }
+.heard .heard-hint { margin-top: 14px; }
+.heard .again { margin-top: 24px; }
 
 .heard-field {
   position: relative;
@@ -458,7 +473,7 @@ em, .ital {
   border-radius: 7px;
   background: var(--fg-inverse);
 }
-.mic-idle { width: 96px; height: 96px; }
+.mic-idle { width: min(96px, 12vh); height: min(96px, 12vh); }
 .cancel { width: 26px; height: 26px; opacity: .7; }
 
 /* ══════════════════════════════════════════════════
@@ -1170,7 +1185,7 @@ em, .ital {
 /* 梦想那一问 */
 .ob-mic-block {
   margin-top: auto;
-  padding-bottom: 96px;
+  padding-bottom: min(96px, 12vh);
   display: flex; flex-direction: column; align-items: center; gap: 20px;
 }
 /* 梦想那一屏的间距是设计稿量出来的，不是等距：
@@ -1202,7 +1217,14 @@ em, .ital {
   color: var(--fg-secondary);
   text-align: center;
 }
-.ob-live { position: absolute; top: 300px; left: 34px; height: auto; }
+/* 顺排，不要绝对定位 —— 绝对定位的文字块会压在停止键上面，
+   看着没事，按不动。 */
+.ob-live {
+  margin: min(46px, 6vh) 0 0 32px;   /* 844 时 254(标题底) + 46 = 300 */
+  width: 322px;
+  pointer-events: none;
+}
+.ob-live .live { position: static; }
 /* 顺排而不是绝对定位 —— 844 时边距加起来仍是 0/28/214/256，
    矮屏时输入框自己收，按钮不会被挤出屏幕 */
 .ob-heard {
@@ -1245,8 +1267,21 @@ em, .ital {
 /* 就地口述的浮层 */
 .dictate {
   position: absolute; z-index: 41;
-  left: 32px; right: 32px; bottom: 170px;
+  left: 32px; right: 32px; bottom: 80px;
   display: flex; flex-direction: column; align-items: center;
+}
+.dictate-live {
+  margin: 0 0 28px;
+  max-height: 132px; overflow: hidden;
+  text-align: center;
+  font: 400 23px/33px var(--serif);
+  font-variation-settings: var(--wonk);
+  color: var(--paper);
+}
+.dictate-hint {
+  margin: 16px 0 0;
+  font: 500 14px/18px var(--sans);
+  color: rgba(253, 251, 247, .6);
 }
 .center { text-align: center; }
 
@@ -1301,3 +1336,5 @@ em, .ital {
   color: var(--accent);
   min-height: 18px;
 }
+
+.speak-cta { width: 330px; }

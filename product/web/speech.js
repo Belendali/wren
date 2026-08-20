@@ -13,14 +13,26 @@ const Speech = (() => {
 
   const canListen = () => !!SR;
 
+  /* onFinal 保证会被调用一次 —— 这一屏的失败模式是「录完了但界面不动」，
+     所以哪怕 onend 没回来，也要有东西把她放出去。 */
+  let finish = null, guard = null;
+
+  function settle(text) {
+    clearTimeout(guard); guard = null;
+    const done = finish; finish = null;
+    rec = null;
+    done && done((text || '').trim());
+  }
+
   function listen({ onPartial, onFinal, onError }) {
     if (!SR) { onError && onError('unsupported'); return null; }
     rec = new SR();
     rec.lang = 'en-US';
     rec.continuous = true;
     rec.interimResults = true;
+    finish = onFinal;
 
-    let settled = '';
+    let settled = '', latest = '';
     rec.onresult = (e) => {
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -28,15 +40,27 @@ const Speech = (() => {
         if (r.isFinal) settled += r[0].transcript;
         else interim += r[0].transcript;
       }
-      onPartial && onPartial((settled + interim).trim());
+      latest = (settled + interim).trim();
+      onPartial && onPartial(latest);
     };
-    rec.onerror = (e) => onError && onError(e.error);
-    rec.onend = () => { rec = null; onFinal && onFinal(settled.trim()); };
+    rec.onerror = (e) => {
+      clearTimeout(guard); guard = null; finish = null; rec = null;
+      onError && onError(e.error);
+    };
+    rec.onend = () => settle(settled || latest);
+    rec._latest = () => settled || latest;
     try { rec.start(); } catch (_) {}
     return rec;
   }
 
-  function stopListening() { if (rec) { try { rec.stop(); } catch (_) {} } }
+  function stopListening() {
+    if (!rec) return;
+    const r = rec;
+    try { r.stop(); } catch (_) {}
+    // onend 一般会在几百毫秒内回来；没回来就自己收尾，别把人晾在那儿
+    clearTimeout(guard);
+    guard = setTimeout(() => { if (finish) settle(r._latest ? r._latest() : ''); }, 1500);
+  }
 
   /* ── 音量表 ─────────────────────────────────── */
   let audioCtx = null, micStream = null, raf = null;
