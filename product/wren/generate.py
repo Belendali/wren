@@ -368,3 +368,113 @@ def script(intent: str, profile: dict) -> dict:
         except Exception as exc:  # noqa: BLE001
             print("[wren] 生成回退到本地模板：%s" % exc, file=sys.stderr)
     return {"sessions": script_locally(intent, profile), "source": "template"}
+
+
+# ══════════════════════════════════════════════════════
+#  每日推荐 —— 她还没开口之前，Wren 先带回来的三段
+# ══════════════════════════════════════════════════════
+
+
+def daily_with_claude(profile: dict) -> dict:
+    client = _anthropic()
+    if client is None:
+        raise RuntimeError("no-client")
+    day, part = _now()
+    response = client.messages.create(
+        model=config.anthropic_model(),
+        max_tokens=16000,
+        system=prompts.DAILY_SYSTEM + "\n\n" + prompts.SCRIPT_SYSTEM,
+        messages=[{"role": "user", "content": prompts.daily_user_prompt(profile, day, part)}],
+        output_config={"format": {"type": "json_schema", "schema": prompts.DAILY_SCHEMA}},
+    )
+    stop = getattr(response, "stop_reason", None)
+    if stop in ("refusal", "max_tokens"):
+        raise RuntimeError("stop_reason=%s" % stop)
+    data = _parse(response)
+    if len(data.get("sessions") or []) < 3:
+        raise RuntimeError("模型只给了 %d 段" % len(data.get("sessions") or []))
+    return {
+        "sessions": _shape(data["sessions"]),
+        "suggestions": [s.strip() for s in (data.get("suggestions") or []) if s.strip()][:2],
+    }
+
+
+# 从她描述的那段生活里抠出短句，当输入框下面的快捷入口
+_WISH = re.compile(
+    r"\b(?:i\s+(?:want|wish|hope|dream|would love)\s+(?:to\s+|for\s+)?)(.{3,42}?)(?=[,.;]|\s+and\s+|\s+but\s+|$)",
+    re.I,
+)
+
+
+def _suggestions_from(profile: dict) -> list:
+    # 用句号拼，不是空格 —— 不然「…at Google I want to stop…」连成一句，
+    # 正则找不到子句边界，前一条就被整个吞掉了
+    parts = [str(profile.get(k) or "").strip().rstrip(".") for k in ("dream", "desire")]
+    text = ". ".join(p for p in parts if p) + "."
+    out = []
+    for m in _WISH.finditer(text):
+        phrase = m.group(1).strip().rstrip(".")
+        if 3 <= len(phrase) <= 42:
+            out.append(phrase[0].upper() + phrase[1:])
+    # 名词短语兜底：抓「a big house with a garden」这类
+    if len(out) < 2:
+        for m in re.finditer(r"\b(?:a|an|my)\s+([a-z]+(?:\s+[a-z]+){1,3})\b", text, re.I):
+            phrase = m.group(0).strip()
+            if phrase.lower() not in (x.lower() for x in out):
+                out.append(phrase[0].upper() + phrase[1:])
+            if len(out) >= 2:
+                break
+
+    # 收尾：别停在介词或连词上（「A big beautiful house with」这种读着像半句话）
+    dangling = {"with", "and", "of", "in", "for", "to", "that", "a", "an", "the", "my", "at", "on"}
+    cleaned = []
+    for phrase in out:
+        words = phrase.split()
+        while words and words[-1].lower() in dangling:
+            words.pop()
+        if len(words) < 2:
+            continue
+        phrase = " ".join(words)
+        low = phrase.lower()
+        # 「Get my dream job at Google」和「My dream job at Google」只留一条
+        if any(low in c.lower() or c.lower() in low for c in cleaned):
+            continue
+        cleaned.append(phrase)
+    return cleaned[:2]
+
+
+def daily_locally(profile: dict) -> dict:
+    """没有 key 时的每日三段。用她描述的那段生活当素材，走同一套五段式。"""
+    dream = (profile.get("dream") or profile.get("desire") or "").strip()
+    seeds = [
+        dream or "a morning that starts the way you want it to",
+        "the hour before anyone needs anything from you",
+        "one ordinary afternoon inside it",
+    ]
+    titles = ["The morning inside it", "Before anyone's up", "An ordinary afternoon"]
+
+    sessions = []
+    for i, seed in enumerate(seeds):
+        built = script_locally(seed, profile)[0 if i < 2 else 2]
+        built["title"] = titles[i]
+        built["openingLine"] = built["openingLine"] or titles[i]
+        sessions.append(built)
+    # 重新编号，免得三段都叫 s1
+    for i, s in enumerate(sessions):
+        s["id"] = "s%d" % (i + 1)
+        s["index"] = i
+        s["art"] = ARTS[i % len(ARTS)]
+    return {"sessions": sessions, "suggestions": _suggestions_from(profile)}
+
+
+def daily(profile: dict) -> dict:
+    if config.anthropic_key():
+        try:
+            result = daily_with_claude(profile)
+            result["source"] = "claude"
+            return result
+        except Exception as exc:  # noqa: BLE001
+            print("[wren] 每日推荐回退到本地模板：%s" % exc, file=sys.stderr)
+    result = daily_locally(profile)
+    result["source"] = "template"
+    return result

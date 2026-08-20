@@ -837,3 +837,373 @@ em, .ital {
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* ══════════════════════════════════════════════════
+   Home · For you today
+   ══════════════════════════════════════════════════ */
+/* 注意：.home 和 .screen 是同一个元素，.screen 是 flex column ——
+   这里必须显式改回 block，否则卡片会被当成 flex item 压扁。 */
+.home {
+  display: block;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding-bottom: 120px;   /* 给 TabBar 让位 */
+}
+.home::-webkit-scrollbar { display: none; }
+
+.home-input { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+
+.home-suggestions {
+  display: flex; flex-wrap: wrap;
+  gap: 9px; padding: 0 24px; width: 100%;
+}
+.suggestion {
+  border: 1px solid rgba(53, 37, 31, .16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .34);
+  padding: 8px 16px;
+  filter: drop-shadow(0 3px 5px rgba(53, 37, 31, .16));
+  font: 400 14px/20px var(--serif);
+  font-variation-settings: var(--wonk);
+  color: var(--fg-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform .16s var(--ease);
+}
+.suggestion:active { transform: scale(.97); }
+
+.for-you {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 48px 24px 0;
+}
+.for-you h2 {
+  margin: 0;
+  font: 400 26px/34px var(--serif);
+  font-variation-settings: var(--wonk);
+  color: var(--fg-primary);
+}
+
+.session-rail {
+  display: flex; align-items: flex-start;
+  gap: 14px; padding: 14px 24px 0;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 24px;   /* 吸附时别把左边距吃掉 */
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.session-rail::-webkit-scrollbar { display: none; }
+
+.session-card {
+  flex: 0 0 246px;
+  scroll-snap-align: start;
+  height: 300px;
+  border: 0; padding: 0; text-align: left;
+  border-radius: 28px;
+  background: var(--surface-input);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  cursor: pointer;
+  transition: transform .18s var(--ease);
+}
+.session-card:active { transform: scale(.98); }
+.session-card .art {
+  position: relative;
+  height: 222px; flex: 0 0 222px;
+  overflow: hidden;
+}
+.session-card .art img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.session-card .art .photo { opacity: .6; }
+.session-card .art .mins {
+  position: absolute; top: 15px; left: 16px;
+  color: var(--fg-inverse);
+  text-shadow: 0 1px 6px rgba(20, 14, 11, .45);
+}
+.session-card .body {
+  flex: 1 1 auto;
+  padding: 8px 16px;
+  overflow: hidden;
+}
+.session-card .body h3 {
+  margin: 0;
+  font: 400 20px/27px var(--serif);
+  font-variation-settings: var(--wonk);
+  color: var(--fg-primary);
+  /* body 在设计稿里固定 78px —— 两行是硬上限，长标题截断而不是撑破卡片 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 还没拿到今天那三段时的占位 */
+.session-card.skeleton { pointer-events: none; }
+.session-card.skeleton .art,
+.session-card.skeleton .body {
+  background: linear-gradient(100deg, rgba(255,255,255,.18) 30%, rgba(255,255,255,.5) 50%, rgba(255,255,255,.18) 70%);
+  background-size: 220% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+.session-card.skeleton .body { height: 78px; margin: 8px 16px; border-radius: 8px; }
+@keyframes shimmer { to { background-position: -220% 0; } }
+
+.tabbar {
+  position: absolute; z-index: 20;
+  left: 50%; transform: translateX(-50%);
+  top: 752px;
+  width: 326px; height: 68px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 34px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 999px;
+  background: var(--surface-input);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  box-shadow: 0 10px 28px -4px rgba(77, 41, 26, .18);
+}
+.tabbar .tab { width: 24px; height: 24px; opacity: .45; }
+.tabbar .tab.on { opacity: 1; }
+
+/* ══════════════════════════════════════════════════
+   Onboarding
+   ══════════════════════════════════════════════════ */
+/* 别在这里写 position —— .screen 已经是 absolute inset:0，
+   同权重后写的会把它覆盖掉，整屏就掉到下一页去了。 */
+.ob {
+  height: 100%;
+  display: flex; flex-direction: column;
+}
+.ob-top { position: absolute; top: 0; left: 0; width: 100%; height: 100px; }
+.ob-back { position: absolute; top: 62px; left: 28px; width: 26px; height: 26px; }
+.ob-track {
+  position: absolute; top: 73px; left: 66px;
+  width: 296px; height: 4px;
+  border-radius: 999px;
+  background: var(--fg-primary);
+  opacity: .22;
+}
+.ob-track > i {
+  display: block; height: 100%;
+  border-radius: 999px;
+  background: var(--fg-primary);
+  transition: width .45s var(--ease);
+}
+
+.ob-q {
+  margin: 182px 0 0 32px;
+  width: 322px;
+  font: 400 27px/36px var(--serif);
+  font-variation-settings: var(--wonk);
+  color: var(--fg-primary);
+}
+.ob-q.dim { opacity: .42; }
+.ob-note {
+  margin: 14px 0 0 32px;
+  width: 322px;
+  font: 400 15px/22px var(--sans);
+  color: var(--fg-muted);
+}
+.ob-note.above-pill { margin: 0 0 10px; width: auto; }
+
+/* 输入胶囊贴在键盘上方 —— 真键盘弹出时 dvh 会自己收 */
+.ob-foot {
+  margin-top: auto;
+  padding: 0 24px 44px;
+  display: flex; flex-direction: column;
+}
+
+.ob-mirror {
+  margin: 300px 0 0 32px;
+  width: 322px;
+  font: 400 26px/38px var(--serif);
+  font-variation-settings: var(--wonk);
+  color: var(--fg-primary);
+}
+.ob-cta {
+  position: absolute;
+  left: 30px; width: 330px; top: 700px;
+}
+
+/* Welcome */
+.ob-logo {
+  position: absolute; top: 266px; left: 50%;
+  transform: translateX(-50%);
+  width: 100px; height: 100px;
+}
+.ob-brand {
+  position: absolute; top: 396px; left: 0;
+  margin: 0; width: 100%;
+  text-align: center;
+  font: 400 46px/1.2 var(--serif);
+  font-variation-settings: var(--wonk);
+  letter-spacing: -.92px;
+  color: var(--fg-primary);
+}
+.ob-tagline {
+  position: absolute; top: 466px; left: 50%;
+  transform: translateX(-50%);
+  width: 320px; text-align: center;
+  font: 400 14px/1.2 var(--sans);
+  color: var(--fg-secondary);
+}
+
+/* 重要的人 */
+.ob-people {
+  position: absolute; top: 360px; left: 30px;
+  width: 330px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.person-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px 14px 18px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 20px;
+  background: var(--surface-input);
+}
+.person-card .copy { flex: 1 1 0; min-width: 0; }
+.person-card .who {
+  margin: 0 0 3px;
+  font: 400 18px/24px var(--serif);
+  font-variation-settings: var(--wonk);
+  color: var(--fg-primary);
+}
+.person-card .note {
+  margin: 0;
+  font: 400 14px/19px var(--sans);
+  color: var(--fg-muted);
+}
+.person-card .remove { width: 22px; height: 22px; flex: 0 0 auto; }
+
+.add-person {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 17px 0;
+  border: 1px dashed rgba(53, 37, 31, .16);
+  border-radius: 20px;
+  background: var(--btn-secondary);
+  box-shadow: var(--lift-sm);
+  font: 500 15px/20px var(--sans);
+  color: var(--fg-secondary);
+  cursor: pointer;
+}
+.add-person img { width: 18px; height: 18px; }
+
+/* Add Person 弹层 —— 整套 onboarding 里最值钱的一块 */
+.ob-sheet {
+  position: absolute; z-index: 40;
+  left: 0; bottom: 0;
+  width: 100%; padding: 12px 30px 40px;
+  border-radius: 30px 30px 0 0;
+  background: #FEFDFB;
+  transform: translateY(102%);
+  transition: transform .4s var(--ease);
+}
+.ob-sheet.on { transform: none; }
+.ob-sheet .grabber {
+  width: 38px; height: 4px; margin: 0 auto;
+  border-radius: 999px; background: #14100E; opacity: .22;
+}
+.ob-sheet .sheet-title {
+  margin: 22px 0 0;
+  text-align: center;
+  font: 400 22px/28px var(--serif);
+  font-variation-settings: var(--wonk);
+  color: #14100E;
+}
+.ob-sheet .sheet-close {
+  position: absolute; top: 36px; right: 26px;
+  width: 24px; height: 24px;
+}
+.ob-sheet .field {
+  margin-top: 18px;
+  border-radius: 16px;
+  background: #F5F3F0;
+  padding: 16px 20px;
+}
+.ob-sheet .field.tall { min-height: 82px; }
+.ob-sheet .field input,
+.ob-sheet .field textarea {
+  width: 100%; border: 0; background: none; outline: none; resize: none;
+  font: 400 16px/22px var(--sans);
+  color: #14100E;
+}
+.ob-sheet .sheet-add { margin-top: 22px; height: 56px; }
+
+/* 梦想那一问 */
+.ob-mic-block {
+  margin-top: auto;
+  padding-bottom: 96px;
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+}
+/* 梦想那一屏的间距是设计稿量出来的，不是等距：
+   波形 470 · 麦克风 542 · Tap and talk 652 · Type 690 */
+.ob-dream-block {
+  position: absolute; top: 470px; left: 0;
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+}
+.ob-dream-block .ob-mic { margin-top: 45px; }
+.ob-dream-block .label { margin: 14px 0 0; }
+.ob-dream-block .ob-type { margin-top: 18px; }
+.wave-strip { display: flex; align-items: flex-end; gap: 3px; height: 27px; }
+.wave-strip i {
+  width: 3px; border-radius: 2px;
+  background: var(--fg-primary); opacity: .38;
+}
+.ob-mic { width: 96px; height: 96px; }
+.ob-type {
+  border: 0; background: none; cursor: pointer;
+  font: 500 14px/18px var(--sans);
+  color: var(--fg-muted);
+}
+.ob-timer {
+  margin: 0;
+  font: 400 22px/28px var(--serif);
+  font-variation-settings: var(--wonk);
+  color: var(--fg-secondary);
+  text-align: center;
+}
+.ob-live { position: absolute; top: 300px; left: 34px; height: auto; }
+.ob-heard { position: absolute; top: 296px; left: 32px; height: 418px; }
+.ob-heard .cap { top: 0; }
+.ob-heard .heard-field { top: 28px; }
+.ob-heard .heard-hint { top: 214px; }
+.ob-heard .again { top: 256px; }
+
+/* 承诺 */
+.ob-promise-q {
+  margin: 96px 0 0 32px;
+  width: 322px;
+  font: 400 25px/37px var(--serif);
+  font-variation-settings: var(--wonk);
+  color: var(--fg-primary);
+}
+.ob-portrait {
+  position: absolute; top: 209px; left: 22px;
+  width: 345px; height: 345px;
+  border-radius: 130.5px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, .3);
+}
+.ob-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.ob-portrait-note {
+  position: absolute; top: 585px; left: 50%;
+  transform: translateX(-50%);
+  margin: 0; width: 260px; text-align: center;
+  font: 400 13px/18px var(--sans);
+  color: var(--fg-secondary);
+}
+.ob .ob-cta.promise { top: 730px; }
+
+/* 就地口述的浮层 */
+.dictate {
+  position: absolute; z-index: 41;
+  left: 32px; right: 32px; bottom: 170px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.center { text-align: center; }

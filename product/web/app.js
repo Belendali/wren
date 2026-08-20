@@ -44,13 +44,16 @@ const COVERS = [
 let S = load();
 function fresh() {
   return {
-    // onboarding 还没接进来，先给一个可用的默认画像。
-    // 换成真 onboarding 的时候，只要往这个对象里灌同名字段即可。
-    profile: { name: 'Maya', people: [], bodyAnchor: 'chest' },
+    // onboarding 会往这个对象里灌数据。dream 是最要紧的一项 ——
+    // Home 上的每日三段和快捷入口都从它派生。
+    profile: { name: '', people: [], bodyAnchor: 'chest', desire: '', work: '', dream: '' },
+    onboarded: false,
+    today: null,          // { date, sessions, suggestions } —— 隔天重新拿
     history: [],
     ambient: true
   };
 }
+const todayKey = () => new Date().toISOString().slice(0, 10);
 function load() {
   try { return Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY) || '{}')); }
   catch (_) { return fresh(); }
@@ -63,11 +66,24 @@ let draft = { text: '', offered: false, refusals: 0 };
 let run = { sessions: [], chosen: 0, played: [], source: '', intent: '' };
 
 /* 同一句话每次进来配同一张封面 —— 她回到 Library 时要认得出。 */
-function coverFor(seed) {
+function hashOf(seed) {
   let h = 0;
   const str = String(seed || '');
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
-  return COVERS[h % COVERS.length];
+  return h;
+}
+function coverFor(seed) { return COVERS[hashOf(seed) % COVERS.length]; }
+
+/* 一排卡片里不要出现两张一样的图 —— 只有 8 张，撞得很容易。
+   仍然是确定性的：同一组标题永远得到同一组图。 */
+function coversFor(seeds) {
+  const used = new Set();
+  return seeds.map(seed => {
+    let i = hashOf(seed) % COVERS.length;
+    for (let n = 0; n < COVERS.length && used.has(i); n++) i = (i + 1) % COVERS.length;
+    used.add(i);
+    return COVERS[i];
+  });
 }
 
 /* ── 路由 ───────────────────────────────────────── */
@@ -76,6 +92,8 @@ const SURFACE = {
   generating: 'clay', picker: 'clay',
   intro: 'dark', player: 'dark', finish: 'dark'
 };
+// onboarding 整段用 morning 那张底，不是 Home 的陶土色
+const surfaceFor = (name) => name.startsWith('ob-') ? 'morning' : (SURFACE[name] || 'clay');
 const PHOTO = ['intro', 'player', 'finish'];
 
 let current = null;
@@ -91,7 +109,7 @@ function go(name, data) {
   $('#stage').append(node);
 
   const phone = $('#phone');
-  phone.dataset.surface = SURFACE[name] || 'clay';
+  phone.dataset.surface = surfaceFor(name);
   phone.classList.toggle('on-photo', PHOTO.includes(name));
   currentName = name;
 
@@ -145,10 +163,10 @@ function scene(src, playing) {
    01 · Home
    ══════════════════════════════════════════════════ */
 function homeScreen() {
-  const name = S.profile.name;
+  const name = (S.profile.name || 'Hey').trim();
   const input = el('input', {
     type: 'text',
-    placeholder: 'I am...',
+    placeholder: 'Say it out loud…',
     autocomplete: 'off',
     autocapitalize: 'sentences',
     enterkeyhint: 'go',
@@ -163,7 +181,7 @@ function homeScreen() {
   };
 
   input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
-  // 有字就变成发送箭头，空的时候是麦克风 —— 语音是设定的一部分，默认露在外面
+  // 有字就是发送箭头，空的时候是麦克风 —— 语音是设定的一部分，默认露在外面
   const round = el('button.round', { type: 'button' });
   const paint = () => {
     round.innerHTML = '';
@@ -177,7 +195,53 @@ function homeScreen() {
   input.addEventListener('input', paint);
   paint();
 
-  return el('div', {},
+  /* 快捷入口：她 onboarding 里说过的话，点一下就填进输入框 */
+  const chips = el('div.home-suggestions', {});
+  const paintChips = (list) => {
+    chips.innerHTML = '';
+    (list || []).forEach(text => chips.append(el('button.suggestion', {
+      type: 'button',
+      onclick: () => { input.value = text; paint(); input.focus(); }
+    }, text)));
+  };
+  paintChips(S.today && S.today.suggestions);
+
+  /* For you today —— 她还没开口，Wren 先带回来的三段 */
+  const rail = el('div.session-rail', {});
+  const paintRail = (sessions) => {
+    rail.innerHTML = '';
+    if (!sessions) {
+      for (let i = 0; i < 3; i++) rail.append(el('div.session-card.skeleton', {}, el('div.art'), el('div.body')));
+      return;
+    }
+    const covers = coversFor(sessions.map(s => s.title));
+    sessions.forEach((session, i) => {
+      rail.append(el('button.session-card', {
+        type: 'button',
+        onclick: () => {
+          run = { sessions, chosen: i, played: [], source: S.today.source || '', intent: S.profile.dream || '' };
+          go('intro');
+        }
+      },
+        el('div.art', {},
+          el('img', { src: `assets/img/art-${session.art}.jpg`, alt: '' }),
+          el('img.photo', { src: covers[i], alt: '' }),
+          el('p.caption.mins', {}, session.label)),
+        el('div.body', {}, el('h3', {}, session.title))));
+    });
+  };
+  paintRail(S.today && S.today.sessions);
+
+  loadToday().then(today => {
+    if (currentName !== 'home' || !today) return;
+    paintChips(today.suggestions);
+    paintRail(today.sessions);
+  });
+
+  const tab = (name, label, onclick, on) =>
+    el('button.icon-btn.tab' + (on ? '.on' : ''), { type: 'button', 'aria-label': label, onclick }, icon(name));
+
+  return el('div.home', {},
     el('div.home-hero', {}, el('img', { src: 'assets/img/home-hero.png', alt: '' })),
     el('div.home-head', {},
       el('p.wordmark', {}, 'Wren'),
@@ -186,8 +250,41 @@ function homeScreen() {
         iconBtn('frost-history.svg', '', () => showHistory()))),
     el('div.home-ask', {},
       el('h1', {}, `${name}, what do you want to manifest today?`),
-      el('div.pill', {}, input, round)),
-    el('div.home-fill'));
+      el('div.home-input', {}, el('div.pill', {}, input, round), chips)),
+    el('div.for-you', {}, el('h2', {}, 'For you today')),
+    rail,
+    el('div.tabbar', {},
+      tab('tab-home.svg', 'Home', () => {}, true),
+      tab('tab-library.svg', 'Library', () => toast('Library —— 这一期先不做')),
+      tab('tab-me.svg', 'Me', () => toast('Me —— 这一期先不做'))));
+}
+
+/* 每天第一次进 Home 时拿一次。当天已经有了就不再请求。 */
+let todayPending = null;
+function loadToday() {
+  if (S.today && S.today.date === todayKey()) return Promise.resolve(S.today);
+  if (todayPending) return todayPending;
+  todayPending = API.daily(withRecent(S.profile))
+    .then(res => {
+      S.today = {
+        date: todayKey(),
+        sessions: res.sessions,
+        suggestions: res.suggestions,
+        source: res.source
+      };
+      save();
+      return S.today;
+    })
+    .catch(err => { console.warn('[wren] 每日推荐拿不到：', err); return null; })
+    .finally(() => { todayPending = null; });
+  return todayPending;
+}
+
+/* 把最近听过的标题带上，免得每天推同样的三段 */
+function withRecent(profile) {
+  return Object.assign({}, profile, {
+    recentTitles: S.history.slice(0, 12).map(h => h.title)
+  });
 }
 
 function showHistory() {
@@ -656,7 +753,7 @@ async function checkThenGenerate(text) {
   go('offer', { reflection: verdict.reflection, options: verdict.options });
 }
 
-async function generateNow(text) {
+async function generateNow(text, opts = {}) {
   if (currentName !== 'generating') go('generating');
   const token = {};
   generation = token;
@@ -664,6 +761,16 @@ async function generateNow(text) {
     const result = await API.generate(text, S.profile);
     if (generation !== token) return;
     run = { sessions: result.sessions, chosen: 1, played: [], source: result.source, intent: text };
+    // onboarding 结尾这一次，生成的就是她描述的那种生活 —— 直接当今天的三段
+    if (opts.first) {
+      // /api/generate 不返回快捷入口（那是 /api/daily 的活），
+      // 第一天先从她刚说的那段话里抽两条，明天起走 daily。
+      const chips = (result.suggestions && result.suggestions.length)
+        ? result.suggestions
+        : Offline.suggestions(S.profile);
+      S.today = { date: todayKey(), sessions: result.sessions, suggestions: chips, source: result.source };
+      save();
+    }
     if (result.source !== 'claude') {
       toast(API.caps.offline
         ? '静态预览：稿子是本地模板，声音是浏览器合成的'
@@ -694,7 +801,7 @@ function remember() {
 /* ══════════════════════════════════════════════════
    启动
    ══════════════════════════════════════════════════ */
-const SCREENS = {
+const SCREENS = Object.assign({}, Onboarding.screens, {
   home: homeScreen,
   listening: listeningScreen,
   heard: heardScreen,
@@ -704,13 +811,14 @@ const SCREENS = {
   intro: introScreen,
   player: playerScreen,
   finish: finishScreen
-};
+});
 
 (async function boot() {
   statusClock();
   setInterval(statusClock, 20000);
   await API.boot();
-  go('home');
+  // 第一次进来先走 onboarding —— 没有那段「梦想的生活」，后面什么都生成不了
+  go(S.onboarded ? 'home' : 'ob-welcome');
   // 预热封面，切到 Story Intro 的时候照片已经在了
   COVERS.forEach(src => { const i = new Image(); i.src = src; });
 })();

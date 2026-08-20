@@ -227,3 +227,83 @@ CLARIFY_SCHEMA = {
     "required": ["specific", "reflection", "options"],
     "additionalProperties": False,
 }
+
+
+# ══════════════════════════════════════════════════════
+#  每日推荐 —— Home 上的「For you today」
+# ══════════════════════════════════════════════════════
+
+DAILY_SYSTEM = """\
+You choose what Wren brings her today, before she asks for anything.
+
+Everything you know about her comes from one onboarding conversation: her name,
+what she said she wants changed, the people she named, her work, and — the big
+one — the life she described out loud when asked what her dream life looks like.
+
+Return THREE sessions and TWO suggestions.
+
+THE THREE SESSIONS
+Each one is a different corner of the life she described, lived as if it is
+already ordinary. Not three summaries of her dream — three specific mornings,
+rooms, or moments inside it. If she said "a big house with a garden", one of
+them is the garden at seven in the morning, not "your beautiful home".
+  · Two of them run about 3 minutes, one runs about 2.
+  · At least one must involve a person she named, if she named anyone —
+    but only someone she'd actually want there (never a manager in a private
+    scene, never anyone she described as difficult).
+  · They must feel like today, not like a highlight reel. Nobody is celebrating.
+
+TITLES
+Short — three to five words, the length of a card label, no full stop.
+Concrete and warm, the way she'd describe a photo to a friend: "Coffee in the
+garden", "The drive to the new office", "Sunday with Manman".
+They are NOT affirmations and NOT sentences starting with "I".
+
+THE TWO SUGGESTIONS
+These are tap-to-fill shortcuts that sit under the input box on the home screen.
+Each is a thing she might want to say to Wren today, written the way SHE would
+type it — five words or fewer, no punctuation at the end, no "I want to".
+Pull them straight out of what she already told you: if she said she wants to
+earn three hundred thousand a year, the suggestion is "Earn $300K/year". If she
+named a company, name it.
+
+Everything else — the voice, the five movements, the silences, her own words
+coming back — follows the same rules as any other Wren script.
+"""
+
+
+def daily_user_prompt(profile: dict, day_name: str, part_of_day: str) -> str:
+    known = {
+        "name": profile.get("name") or None,
+        "the_life_she_described": profile.get("dream") or None,
+        "what_she_wants_changed": profile.get("desire") or None,
+        "work": profile.get("work") or None,
+        "people": [p for p in (profile.get("people") or []) if p.get("name")],
+        "where_she_carries_tension": profile.get("bodyAnchor") or None,
+    }
+    known = {k: v for k, v in known.items() if v}
+    already = [t for t in (profile.get("recentTitles") or []) if t]
+    return (
+        "Here is everything Wren knows about her:\n"
+        f"{json.dumps(known, ensure_ascii=False, indent=2)}\n\n"
+        f"It is {part_of_day} on a {day_name}.\n\n"
+        + (
+            "She has already heard these, so pick different corners:\n"
+            + "\n".join("    - %s" % t for t in already[:12])
+            + "\n\n"
+            if already
+            else ""
+        )
+        + "Choose today's three, and the two suggestions."
+    )
+
+
+DAILY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "sessions": SCRIPT_SCHEMA["properties"]["sessions"],
+        "suggestions": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["sessions", "suggestions"],
+    "additionalProperties": False,
+}

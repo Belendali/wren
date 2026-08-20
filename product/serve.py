@@ -8,6 +8,7 @@
     GET  /api/config                     哪些 provider 是活的
     POST /api/clarify   {intent,profile}  这句话够不够具体
     POST /api/generate  {intent,profile}  三段稿子
+    POST /api/daily     {profile}         Home 上的每日三段 + 两个快捷入口
     POST /api/tts/status {texts:[...]}    这些句子合成到哪儿了
     GET  /api/audio/<key>.mp3             一句话的音频（没有就现合成）
 """
@@ -103,6 +104,16 @@ class Handler(SimpleHTTPRequestHandler):
                     return self._json({"error": "empty"}, 400)
                 result = generate.script(intent, data.get("profile") or {})
                 # 她还在挑卡片，音频已经在合成了
+                tts.warm([seg["text"] for s in result["sessions"] for seg in s["segments"]])
+                result["tts"] = config.tts_provider()
+                for session in result["sessions"]:
+                    for seg in session["segments"]:
+                        seg["key"] = tts.key_for(seg["text"])
+                return self._json(result)
+
+            if self.path == "/api/daily":
+                data = self._read_json()
+                result = generate.daily(data.get("profile") or {})
                 tts.warm([seg["text"] for s in result["sessions"] for seg in s["segments"]])
                 result["tts"] = config.tts_provider()
                 for session in result["sessions"]:

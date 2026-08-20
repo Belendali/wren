@@ -5,7 +5,7 @@
 这不是 demo。生成、合成、播放三段都是真的后端在做事，**除了 key 还没填**——
 key 一填，同一套代码就从「本地模板」切到「真为她写的」，前端一行不用改。
 
-对应 Figma `🐦 Wren` → 📱 Product → section **主流程 · Home → Player**，9 屏 1:1 还原。
+对应 Figma `🐦 Wren` → 📱 Product：**Onboarding**（10 屏）+ **Home**（`4:8`）+ **主流程 · Home → Player**（9 屏），全部 1:1 还原。
 
 ---
 
@@ -16,7 +16,8 @@ key 一填，同一套代码就从「本地模板」切到「真为她写的」�
 这条链接是**静态预览**：九屏、交互、播放全是真的，但 GitHub Pages 上没有后端，
 所以稿子走本地模板、声音是浏览器合成的。**用 Chrome 或 Safari**，手机上效果最好。
 
-要试的是这一段：`说一件明天真的要面对的事 → That's it → 三选一 → 播放`。
+第一次进来是 onboarding。要试的是最后那一问 —— **「What does your dream life look like?」**：
+那段话是整个产品后面所有内容的料，Home 上的每日三段和输入框下面的快捷入口都从它派生。
 
 ---
 
@@ -68,6 +69,30 @@ cp .env.example .env        # 已经有 .env 的话直接编辑
 | 起了服务、填了 key | **Claude** | **ElevenLabs / OpenAI** | 填 `.env` 后重启 |
 
 三档返回的数据结构完全一致，所以升档不需要动前端。
+
+---
+
+## 第一次进来
+
+```
+Welcome → 名字 → 想改变什么(语音) →〔回应〕→ 重要的人 → 工作 →〔换挡〕
+       → 梦想的生活(语音) → 转写确认 → 承诺 → 生成 → 三选一 → 播放 → Home
+```
+
+六步问题 + 一个梦想提问，进度条九格。顺序照搬 Stella 的弧线（最不费力的先问、
+回应屏卡在情绪成本最高那题之后当奖励），终点换成 Wren 自己的。
+依据写在 `../docs/05-ONBOARDING.md`。
+
+**「重要的人」那一屏是整套里最值钱的设计** —— 名字 + 一句「他是谁」。
+专有名词是「这段是为我写的」那种感觉的唯一来源，生成时会直接用上。
+
+---
+
+## 之后每天
+
+Home 一进来就有三张卡（`For you today`）和两个快捷入口，都来自 `POST /api/daily`：
+拿她的画像和那段梦想，选出今天的三个「已经是日常」的片段。
+当天拿过就存下来，隔天才重新要；最近听过的标题会一起传上去，避免每天推一样的。
 
 ---
 
@@ -124,7 +149,8 @@ wren/
 web/
   index.html
   styles.css        设计系统，数值直译自 Figma 变量
-  app.js            九屏 + 路由 + 状态
+  app.js            Home + 主流程九屏 + 路由 + 状态
+  onboarding.js     onboarding 十屏
   audio.js          播放引擎（真音频 / 浏览器合成，同一条时间线）
   speech.js         麦克风、音量表、鸟叫合成
   api.js            后端客户端（后端不在时转本地）
@@ -145,6 +171,7 @@ cache/audio/        合成好的 mp3，按「句子 + 嗓子」哈希，不进 g
 | `GET /api/config` | 当前哪些 provider 是活的 |
 | `POST /api/clarify` | `{intent, profile}` → `{ok, reflection, options}` |
 | `POST /api/generate` | `{intent, profile}` → `{sessions:[×3], source}`，同时后台开始合成音频 |
+| `POST /api/daily` | `{profile}` → `{sessions:[×3], suggestions:[×2]}`，Home 一进来就要的东西 |
 | `POST /api/tts/status` | `{texts}` → `{ready, total}`，Story Intro 的进度条读这个 |
 | `GET /api/audio/<sha1>.mp3` | 一句话的音频 |
 
@@ -155,10 +182,12 @@ cache/audio/        合成好的 mp3，按「句子 + 嗓子」哈希，不进 g
 
 ## 还没做的
 
-- **Onboarding 没接**：画像现在是 `web/app.js` 里 `fresh()` 的默认值（名字写死 Maya）。
-  接真 onboarding 时往同名字段灌数据即可，`profile` 的结构后端已经在用了。
-- **封面不生成**：用 Figma 里那 8 张实拍图，按句子哈希选一张（同一句话永远同一张封面）。
+- **封面不生成**：用 Figma 里那 8 张实拍图，按句子哈希选一张（同一句话永远同一张，
+  同一排里去重）。**承诺屏那个圆角方框在设计稿里是她自己的脸** —— 现在放的是实拍图占位，
   「带她自己的脸」那版留到下一期。
+- **onboarding 里砍掉的题**：城市、有没有小孩、对工作什么感觉、过去的事、身体锚点、
+  选声音、提醒时间。Figma 里那几帧还在，`profile` 的字段也留着，要加回来直接往
+  `onboarding.js` 的 `FLOW` 里插一步。
 - **Library / Me / 付费墙**：不在这条链路里。
 - **文案有一处待定**：Home 问的是 `what do you want to manifest today?`，1:1 照搬了设计稿。
   但 `docs/06-BRAND-STORY.md` 已经把 `manifest` 划进「讲兑现」的词，要换成「带」的语系。

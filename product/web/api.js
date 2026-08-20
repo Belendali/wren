@@ -53,6 +53,17 @@ const API = (() => {
     }
   }
 
+  /* Home 上的「For you today」。她还没开口，Wren 先带回来三段。 */
+  async function daily(profile) {
+    if (caps.offline) return Offline.daily(profile);
+    try {
+      return await post('api/daily', { profile });
+    } catch (err) {
+      console.warn('[wren] 每日推荐回退到本地：', err);
+      return Object.assign(Offline.daily(profile), { source: 'template-fallback' });
+    }
+  }
+
   async function ttsStatus(texts) {
     try {
       return await post('api/tts/status', { texts }, 15000);
@@ -72,7 +83,7 @@ const API = (() => {
   const audioUrl = (key) => 'api/audio/' + key + '.mp3';
 
   return {
-    boot, clarify, generate, ttsStatus, ttsEnsure, audioUrl,
+    boot, clarify, generate, daily, ttsStatus, ttsEnsure, audioUrl,
     get caps() { return caps; },
     get realVoice() { return caps.tts === 'elevenlabs' || caps.tts === 'openai'; }
   };

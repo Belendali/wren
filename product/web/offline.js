@@ -176,5 +176,58 @@ const Offline = (() => {
     };
   }
 
-  return { script, clarify };
+  /* ── 每日推荐 —— wren/generate.py 里 daily_locally() 的 JS 版 ── */
+  const DANGLING = new Set(['with','and','of','in','for','to','that','a','an','the','my','at','on']);
+
+  function suggestions(profile) {
+    // 用句号拼，不是空格 —— 不然两句连成一句，正则找不到子句边界
+    const text = [profile.dream, profile.desire]
+      .filter(Boolean).map(x => String(x).trim().replace(/\.$/, '')).join('. ') + '.';
+    const out = [];
+    const wish = /\b(?:i\s+(?:want|wish|hope|dream|would love)\s+(?:to\s+|for\s+)?)(.{3,42}?)(?=[,.;]|\s+and\s+|\s+but\s+|$)/gi;
+    let m;
+    while ((m = wish.exec(text))) {
+      const p = m[1].trim().replace(/\.$/, '');
+      if (p.length >= 3 && p.length <= 42) out.push(p[0].toUpperCase() + p.slice(1));
+    }
+    if (out.length < 2) {
+      const noun = /\b(?:a|an|my)\s+[a-z]+(?:\s+[a-z]+){1,3}\b/gi;
+      while ((m = noun.exec(text)) && out.length < 2) {
+        const p = m[0].trim();
+        if (!out.some(x => x.toLowerCase() === p.toLowerCase())) out.push(p[0].toUpperCase() + p.slice(1));
+      }
+    }
+    // 别停在介词上，也别留两条互相包含的
+    const cleaned = [];
+    for (let phrase of out) {
+      const w = phrase.split(/\s+/);
+      while (w.length && DANGLING.has(w[w.length - 1].toLowerCase())) w.pop();
+      if (w.length < 2) continue;
+      phrase = w.join(' ');
+      const low = phrase.toLowerCase();
+      if (cleaned.some(c => c.toLowerCase().includes(low) || low.includes(c.toLowerCase()))) continue;
+      cleaned.push(phrase);
+    }
+    return cleaned.slice(0, 2);
+  }
+
+  function daily(profile = {}) {
+    const dream = (profile.dream || profile.desire || '').trim();
+    const seeds = [
+      dream || 'a morning that starts the way you want it to',
+      "the hour before anyone needs anything from you",
+      'one ordinary afternoon inside it'
+    ];
+    const titles = ['The morning inside it', "Before anyone's up", 'An ordinary afternoon'];
+    const sessions = seeds.map((seed, i) => {
+      const built = script(seed, profile).sessions[i < 2 ? i : 2];
+      return Object.assign({}, built, {
+        id: 's' + (i + 1), index: i, art: ARTS[i % ARTS.length],
+        title: titles[i], openingLine: built.openingLine || titles[i]
+      });
+    });
+    return { sessions, suggestions: suggestions(profile), source: 'template', tts: 'browser' };
+  }
+
+  return { script, clarify, daily, suggestions };
 })();
