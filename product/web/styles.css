@@ -503,13 +503,13 @@ em, .ital {
    06 · Vision Picker
    ══════════════════════════════════════════════════ */
 .vp-bird {
-  position: absolute; top: 101px; left: 50%;
+  position: absolute; top: max(40px, calc(100% - 743px)); left: 50%;
   transform: translateX(-50%);
   width: 156px; height: 62px;
   object-fit: contain;
 }
 .vp-title {
-  position: absolute; top: 181px; left: 50%;
+  position: absolute; top: max(90px, calc(100% - 663px)); left: 50%;
   transform: translateX(-50%);
   width: 330px; text-align: center;
   font: 400 28px/1.2 var(--serif);
@@ -520,8 +520,8 @@ em, .ital {
 }
 
 .vp-rail {
-  position: absolute; top: 267px; left: 0;
-  width: 100%; height: 470px;
+  position: absolute; top: max(150px, calc(100% - 577px)); left: 0;
+  width: 100%; height: 470px; max-height: calc(100% - 150px - 110px);
   display: flex; align-items: flex-start;
   gap: 21px;
   padding: 0 49px;
@@ -582,7 +582,7 @@ em, .ital {
 .vision .play { width: 63px; height: 63px; flex: 0 0 auto; }
 
 .vp-dots {
-  position: absolute; top: 762px; left: 50%;
+  position: absolute; bottom: 75px; left: 50%;
   transform: translateX(-50%);
   display: flex; align-items: center; gap: 8px;
 }
@@ -593,7 +593,7 @@ em, .ital {
 }
 .vp-dots i.on { width: 22px; background: var(--fg-primary); }
 .vp-hint {
-  position: absolute; top: 792px; left: 0; width: 100%;
+  position: absolute; bottom: 36px; left: 0; width: 100%;
   text-align: center;
   color: var(--fg-inverse);
 }
@@ -626,10 +626,17 @@ em, .ital {
 }
 
 .abs { position: absolute; margin: 0; }   /* <p> 的默认 margin 会把绝对定位元素顶偏 */
-.intro-line { top: 372px; left: 28px; width: 318px; color: var(--fg-primary); }
-.intro-status { top: 726px; left: 28px; width: 300px; color: var(--fg-secondary); }
+/* 844 时 max() 取到设计稿的值，矮屏时走 100%-x 那一支往上收 */
+.intro-line {
+  --top: max(120px, calc(100% - 472px));
+  top: var(--top); left: 28px; width: 318px;
+  max-height: min(184px, calc(100% - 118px - var(--top)));
+  overflow: hidden;
+  color: var(--fg-primary);
+}
+.intro-status { bottom: 92px; left: 28px; width: 300px; color: var(--fg-secondary); }
 .intro-track {
-  top: 776px; left: 28px; width: 334px; height: 4px;
+  bottom: 64px; left: 28px; width: 334px; height: 4px;
   border-radius: 999px; background: var(--border-hairline);
   overflow: hidden;
 }
@@ -640,7 +647,7 @@ em, .ital {
   transition: width .5s var(--ease);
 }
 .intro-pct {
-  top: 768px; right: 28px; width: 60px; text-align: right;
+  bottom: 56px; right: 28px; width: 60px; text-align: right;
   color: var(--fg-secondary);
   font: 500 15px/20px var(--sans);
 }
@@ -653,26 +660,30 @@ em, .ital {
   color: var(--fg-primary);
   margin: 0;
 }
+/* 播放器下半部分（read 486 起到 share 828 止，共 358）整组贴底，
+   相对间距完全不变；台词行在上面按剩余空间收，最多四行。 */
 .player-line {
-  top: 268px; left: 28px; width: 326px;
-  max-height: 184px; overflow: hidden;   /* 最多四行，压不到下面的按钮 */
+  --top: max(140px, calc(100% - 576px));
+  top: var(--top); left: 28px; width: 326px;
+  max-height: min(184px, calc(100% - 358px - 12px - var(--top)));
+  overflow: hidden;
   color: var(--fg-primary);
   transition: opacity .4s var(--ease);
 }
-.player-read { top: 486px; left: 28px; }
+.player-read { bottom: 310px; left: 28px; }
 .player-marquee {
-  top: 560px; left: 28px; width: 268px; height: 24px;
+  bottom: 260px; left: 28px; width: 268px; height: 24px;
   overflow: hidden;
   font: 400 17px/26px var(--serif);
   font-variation-settings: var(--wonk);
   color: var(--fg-muted);
   white-space: nowrap;
 }
-.player-loop { top: 546px; left: 316px; width: 46px; height: 46px; }
+.player-loop { bottom: 252px; left: 316px; width: 46px; height: 46px; }
 .player-loop.on { filter: drop-shadow(0 0 10px rgba(233, 111, 81, .8)); }
 
 .player-track {
-  top: 626px; left: 28px; width: 334px; height: 3px;
+  bottom: 215px; left: 28px; width: 334px; height: 3px;
   border-radius: 999px; background: var(--border-hairline);
   cursor: pointer;
 }
@@ -686,20 +697,20 @@ em, .ital {
   opacity: .8;
 }
 .player-knob {
-  top: 623px; left: 28px; width: 9px; height: 9px;
+  bottom: 212px; left: 28px; width: 9px; height: 9px;
   border-radius: 999px; background: var(--paper);
   box-shadow: 0 0 0 1px rgba(11, 8, 6, .2);
   pointer-events: none;
 }
-.player-elapsed { top: 642px; left: 28px; }
-.player-remain { top: 642px; right: 28px; width: 60px; text-align: right; }
+.player-elapsed { bottom: 186px; left: 28px; }
+.player-remain { bottom: 186px; right: 28px; width: 60px; text-align: right; }
 .player-elapsed, .player-remain {
   font: 400 12px/16px var(--sans);
   color: var(--fg-muted);
 }
 
 .transport {
-  top: 682px; left: 28px; width: 334px; height: 88px;
+  bottom: 74px; left: 28px; width: 334px; height: 88px;
   display: flex; align-items: center; justify-content: space-between;
 }
 .transport .big {
@@ -714,7 +725,7 @@ em, .ital {
 .transport .icon-btn.md { width: 30px; height: 30px; }
 .transport .icon-btn.on { filter: drop-shadow(0 0 8px rgba(233, 111, 81, .9)); }
 .player-share {
-  top: 782px; left: 50%; transform: translateX(-50%);
+  bottom: 16px; left: 50%; transform: translateX(-50%);
   gap: 9px; padding: 13px 30px 13px 26px;
 }
 
@@ -744,12 +755,15 @@ em, .ital {
   transition: opacity .3s var(--ease);
 }
 .sheet p.now { opacity: 1; }
+/* ⚠ 没有 .on 的时候必须让点击穿过去 ——
+   否则这层看不见的遮罩会把整个播放器盖住，一个按钮都按不动。 */
 .scrim {
   position: absolute; inset: 0; z-index: 39;
   background: rgba(11, 8, 6, .5);
-  opacity: 0; transition: opacity .4s var(--ease);
+  opacity: 0; pointer-events: none;
+  transition: opacity .4s var(--ease);
 }
-.scrim.on { opacity: 1; }
+.scrim.on { opacity: 1; pointer-events: auto; }
 
 /* ══════════════════════════════════════════════════
    09 · Finish
@@ -759,11 +773,16 @@ em, .ital {
   background: linear-gradient(180deg, rgba(20, 14, 11, .26) 0%, rgba(20, 14, 11, .58) 48%, rgba(11, 8, 6, .88) 100%);
 }
 .finish {
-  position: absolute; top: 138px; left: 28px;
+  position: absolute; left: 28px;
+  top: max(60px, calc(100% - 706px));
+  bottom: 16px;
   width: 334px;
   display: flex; flex-direction: column; align-items: center;
   gap: 18px; padding-top: 16px;
+  overflow-y: auto;
+  scrollbar-width: none;
 }
+.finish::-webkit-scrollbar { display: none; }
 .finish .dots { display: flex; gap: 8px; }
 .finish .dots i {
   width: 8px; height: 8px; border-radius: 999px;
@@ -809,7 +828,7 @@ em, .ital {
 }
 .finish .actions {
   display: flex; flex-direction: column; align-items: center;
-  gap: 5px; width: 100%; margin-top: 50px; padding-top: 14px;
+  gap: 5px; width: 100%; margin-top: 76px; padding-top: 14px;
 }
 .finish .actions .btn { width: 330px; }
 .finish .btn-ghost { color: var(--paper); }
@@ -957,7 +976,7 @@ em, .ital {
 .tabbar {
   position: absolute; z-index: 20;
   left: 50%; transform: translateX(-50%);
-  top: 752px;
+  bottom: 24px;              /* 844 - 752 - 68 —— 矮屏时跟着底边走 */
   width: 326px; height: 68px;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 34px;
