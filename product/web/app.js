@@ -47,6 +47,7 @@ function fresh() {
     // onboarding 会往这个对象里灌数据。dream 是最要紧的一项 ——
     // Home 上的每日三段和快捷入口都从它派生。
     profile: { name: '', people: [], bodyAnchor: 'chest', desire: '', work: '', dream: '' },
+    account: null,        // Auth.current() —— 真鉴权接进来时这里放 provider 返回的身份
     onboarded: false,
     today: null,          // { date, sessions, suggestions } —— 隔天重新拿
     history: [],
@@ -55,11 +56,15 @@ function fresh() {
 }
 const todayKey = () => new Date().toISOString().slice(0, 10);
 function load() {
-  try { return Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY) || '{}')); }
-  catch (_) { return fresh(); }
+  let base;
+  try { base = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY) || '{}')); }
+  catch (_) { base = fresh(); }
+  // 身份单独存在 auth.js 那边，以它为准
+  base.account = Auth.current() || base.account || null;
+  return base;
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (_) {} }
-window.wrenReset = () => { localStorage.removeItem(KEY); location.reload(); };
+window.wrenReset = () => { localStorage.removeItem(KEY); Auth.forget(); location.reload(); };
 
 // 一次会话内的临时状态
 let draft = { text: '', offered: false, refusals: 0 };
@@ -817,8 +822,8 @@ const SCREENS = Object.assign({}, Onboarding.screens, {
   statusClock();
   setInterval(statusClock, 20000);
   await API.boot();
-  // 第一次进来先走 onboarding —— 没有那段「梦想的生活」，后面什么都生成不了
-  go(S.onboarded ? 'home' : 'ob-welcome');
+  // 没登录 → 从头；登了但没答完 → 接着答；答完了 → Home
+  go(!S.account ? 'ob-welcome' : (S.onboarded ? 'home' : 'ob-name'));
   // 预热封面，切到 Story Intro 的时候照片已经在了
   COVERS.forEach(src => { const i = new Image(); i.src = src; });
 })();

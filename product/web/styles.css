@@ -424,7 +424,8 @@ em, .ital {
   box-shadow: var(--lift-sm);
 }
 .heard-field textarea {
-  width: 100%; height: 130px;
+  width: 100%; height: 100%;
+  min-height: 60px;
   border: 0; background: none; outline: none; resize: none;
   font: 400 19px/29px var(--serif);
   font-variation-settings: var(--wonk);
@@ -974,11 +975,21 @@ em, .ital {
    Onboarding
    ══════════════════════════════════════════════════ */
 /* 别在这里写 position —— .screen 已经是 absolute inset:0，
-   同权重后写的会把它覆盖掉，整屏就掉到下一页去了。 */
+   同权重后写的会把它覆盖掉，整屏就掉到下一页去了。
+
+   ⚠ 设计稿是 844 高的画布，但手机浏览器带地址栏时可视区常常只有 640–670。
+   底部按钮一旦写死 top:700 就会沉到屏幕外，而且屏幕不滚 —— 用户直接卡死。
+   所以：内容顺排、按钮一律 margin-top:auto 贴底、容器可滚。
+   844 高时数值仍然和设计稿一致，矮屏时从中间的弹性空隙里收。 */
 .ob {
   height: 100%;
   display: flex; flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding-bottom: 86px;      /* 844 - (700 + 58) —— 设计稿里按钮下方的余量 */
 }
+.ob::-webkit-scrollbar { display: none; }
 .ob-top { position: absolute; top: 0; left: 0; width: 100%; height: 100px; }
 .ob-back { position: absolute; top: 62px; left: 28px; width: 26px; height: 26px; }
 .ob-track {
@@ -996,7 +1007,8 @@ em, .ital {
 }
 
 .ob-q {
-  margin: 182px 0 0 32px;
+  /* 844 时 min() 取到 182（= 设计稿），矮屏时走 vh 那一支自动收 */
+  margin: min(182px, 22vh) 0 0 32px;
   width: 322px;
   font: 400 27px/36px var(--serif);
   font-variation-settings: var(--wonk);
@@ -1019,26 +1031,29 @@ em, .ital {
 }
 
 .ob-mirror {
-  margin: 300px 0 0 32px;
+  margin: min(300px, 36vh) 0 0 32px;
   width: 322px;
   font: 400 26px/38px var(--serif);
   font-variation-settings: var(--wonk);
   color: var(--fg-primary);
 }
 .ob-cta {
-  position: absolute;
-  left: 30px; width: 330px; top: 700px;
+  flex: 0 0 58px;
+  width: 330px;
+  margin: 24px auto 0;       /* auto 在下面那条里 —— 这里是左右居中 */
+  margin-top: auto;
 }
 
 /* Welcome */
+.ob-spacer-top { flex: 1.33 1 0; min-height: 24px; }
+.ob-spacer-bottom { flex: 1 1 0; min-height: 16px; }
 .ob-logo {
-  position: absolute; top: 266px; left: 50%;
-  transform: translateX(-50%);
+  flex: 0 0 100px;
   width: 100px; height: 100px;
+  margin: 0 auto;
 }
 .ob-brand {
-  position: absolute; top: 396px; left: 0;
-  margin: 0; width: 100%;
+  margin: 30px 0 0;
   text-align: center;
   font: 400 46px/1.2 var(--serif);
   font-variation-settings: var(--wonk);
@@ -1046,8 +1061,7 @@ em, .ital {
   color: var(--fg-primary);
 }
 .ob-tagline {
-  position: absolute; top: 466px; left: 50%;
-  transform: translateX(-50%);
+  margin: 15px auto 0;
   width: 320px; text-align: center;
   font: 400 14px/1.2 var(--sans);
   color: var(--fg-secondary);
@@ -1055,7 +1069,7 @@ em, .ital {
 
 /* 重要的人 */
 .ob-people {
-  position: absolute; top: 360px; left: 30px;
+  margin: 58px 30px 0;       /* 302(note 底) + 58 = 360，和设计稿对齐 */
   width: 330px;
   display: flex; flex-direction: column; gap: 10px;
 }
@@ -1143,7 +1157,8 @@ em, .ital {
 /* 梦想那一屏的间距是设计稿量出来的，不是等距：
    波形 470 · 麦克风 542 · Tap and talk 652 · Type 690 */
 .ob-dream-block {
-  position: absolute; top: 470px; left: 0;
+  margin-top: auto;
+  padding-bottom: 50px;      /* 844 时：470 起排，麦克风正好落在 542 */
   width: 100%;
   display: flex; flex-direction: column; align-items: center;
 }
@@ -1169,11 +1184,19 @@ em, .ital {
   text-align: center;
 }
 .ob-live { position: absolute; top: 300px; left: 34px; height: auto; }
-.ob-heard { position: absolute; top: 296px; left: 32px; height: 418px; }
-.ob-heard .cap { top: 0; }
-.ob-heard .heard-field { top: 28px; }
-.ob-heard .heard-hint { top: 214px; }
-.ob-heard .again { top: 256px; }
+/* 顺排而不是绝对定位 —— 844 时边距加起来仍是 0/28/214/256，
+   矮屏时输入框自己收，按钮不会被挤出屏幕 */
+.ob-heard {
+  margin: 42px 0 0 32px;     /* 254(标题底) + 42 = 296 */
+  width: 326px;
+  min-height: 0;
+  display: flex; flex-direction: column; align-items: flex-start;
+}
+.ob-heard > * { position: static; }
+.ob-heard .cap { margin: 0; }
+.ob-heard .heard-field { margin: 12px 0 0; flex: 0 1 172px; min-height: 96px; }
+.ob-heard .heard-hint { margin: 14px 0 0; }
+.ob-heard .again { margin: 24px 0 0; }
 
 /* 承诺 */
 .ob-promise-q {
@@ -1184,21 +1207,21 @@ em, .ital {
   color: var(--fg-primary);
 }
 .ob-portrait {
-  position: absolute; top: 209px; left: 22px;
-  width: 345px; height: 345px;
+  margin: 40px auto 0;       /* 169(标题底) + 40 = 209 */
+  flex: 0 1 345px;
+  width: 345px; max-height: 345px;
   border-radius: 130.5px;
   overflow: hidden;
   background: rgba(255, 255, 255, .3);
 }
 .ob-portrait img { width: 100%; height: 100%; object-fit: cover; }
 .ob-portrait-note {
-  position: absolute; top: 585px; left: 50%;
-  transform: translateX(-50%);
-  margin: 0; width: 260px; text-align: center;
+  margin: 31px auto 0;       /* 554(照片底) + 31 = 585 */
+  width: 260px; text-align: center;
   font: 400 13px/18px var(--sans);
   color: var(--fg-secondary);
 }
-.ob .ob-cta.promise { top: 730px; }
+.ob.promise { padding-bottom: 56px; }   /* 按钮在 730，比别的屏低 30 */
 
 /* 就地口述的浮层 */
 .dictate {
@@ -1207,3 +1230,55 @@ em, .ital {
   display: flex; flex-direction: column; align-items: center;
 }
 .center { text-align: center; }
+
+/* ══════════════════════════════════════════════════
+   登录 —— 没有 Figma 帧，按 Quiet Signal 现搭的
+   ══════════════════════════════════════════════════ */
+.ob.login { padding-bottom: 44px; }
+.ob-logo.small { flex: 0 0 64px; width: 64px; height: 64px; }
+
+.login-title {
+  margin: 34px auto 0;
+  width: 322px; text-align: center;
+  font: 400 27px/36px var(--serif);
+  font-variation-settings: var(--wonk);
+  color: var(--fg-primary);
+}
+.login-note {
+  margin: 14px auto 0;
+  width: 300px; text-align: center;
+  font: 400 15px/22px var(--sans);
+  color: var(--fg-muted);
+}
+
+.login-actions {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; width: 100%;
+}
+.login-actions .btn { width: 330px; }
+
+/* 深色那颗留给 Apple，浅色留给 Google —— 和 Quiet Signal 的按钮谱系一致：
+   渐变、不带颗粒、墨色投影。 */
+.btn.dark {
+  background: linear-gradient(180deg, #3B2A23 0%, #241813 55%, #14100E 100%);
+  color: #FFF8F1;
+}
+.btn.light {
+  background: var(--btn-secondary);
+  border: 1px solid rgba(53, 37, 31, .16);
+  box-shadow: var(--btn-inset), var(--lift-sm);
+  color: var(--fg-primary);
+}
+.btn-ghost.email { margin-top: 2px; color: var(--fg-secondary); }
+.login-fine {
+  margin: 10px 0 0;
+  width: 300px; text-align: center;
+  font: 400 12px/17px var(--sans);
+  color: var(--fg-muted);
+}
+.sheet-err {
+  margin: 10px 0 0;
+  font: 400 13px/18px var(--sans);
+  color: var(--accent);
+  min-height: 18px;
+}

@@ -26,13 +26,88 @@ const Onboarding = (() => {
       el('div.ob-track', {}, el('i', { style: { width: (pct * 100) + '%' } })));
   }
 
-  /* ── 00 · Welcome ─────────────────────────────── */
+  /* ── 00 · Welcome ───────────────────────────────
+     停三秒就自己去登录。Begin 是给等不及的人的快捷键，不是唯一出路 ——
+     这一屏没有任何东西可以卡住她。 */
+  const SPLASH_MS = 3000;
+  let splashTimer = null;
+
   function welcome() {
-    return el('div.ob', {},
+    const next = () => { clearTimeout(splashTimer); go('ob-login'); };
+    clearTimeout(splashTimer);
+    splashTimer = setTimeout(() => { if (currentName === 'ob-welcome') go('ob-login'); }, SPLASH_MS);
+
+    return el('div.ob', { onclick: next },
+      el('div.ob-spacer-top'),
       el('img.ob-logo', { src: 'assets/img/logo-1024.png', alt: 'Wren' }),
       el('h1.ob-brand', {}, 'Wren'),
       el('div.ob-tagline', { html: 'Small bird. The whole sky hears it.<br>Say it out loud — Wren carries the rest.' }),
-      el('button.btn.ob-cta', { type: 'button', onclick: () => go('ob-name') }, 'Begin'));
+      el('div.ob-spacer-bottom'),
+      el('button.btn.ob-cta', { type: 'button', onclick: next }, 'Begin'));
+  }
+
+  /* ── 01 · 登录 ──────────────────────────────────
+     没有 Figma 帧，按 Quiet Signal 现搭的。
+     鉴权本身在 auth.js 里，现在是本地占位 —— 换真 provider 只改那个文件。 */
+  function login() {
+    const enter = async (fn, label) => {
+      try {
+        S.account = await fn();
+        save();
+        go('ob-name');
+      } catch (err) {
+        if (err && err.message === 'bad-email') return;
+        console.warn('[wren] 登录失败：', err);
+        toast(label + ' 没走通 —— 换一个试试');
+      }
+    };
+
+    function emailSheet() {
+      const field = el('input', {
+        type: 'email', placeholder: 'you@example.com',
+        autocomplete: 'email', autocapitalize: 'none', enterkeyhint: 'go', spellcheck: 'false'
+      });
+      const err = el('p.sheet-err', {});
+      const submit = async () => {
+        try {
+          S.account = await Auth.signInWithEmail(field.value);
+          save(); close(); go('ob-name');
+        } catch (_) {
+          err.textContent = 'That address doesn\u2019t look right.';
+          field.focus();
+        }
+      };
+      field.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+      field.addEventListener('input', () => { err.textContent = ''; });
+
+      const panel = el('div.ob-sheet', {},
+        el('div.grabber'),
+        el('p.sheet-title', {}, 'Your email'),
+        el('button.icon-btn.sheet-close', { type: 'button', onclick: close }, icon('ob-sheet-close.svg')),
+        el('div.field', {}, field),
+        err,
+        el('button.btn.sheet-add', { type: 'button', onclick: submit }, 'Continue'));
+      const scrim = el('div.scrim.on', { onclick: close });
+      $('#phone').append(scrim, panel);
+      setTimeout(() => { panel.classList.add('on'); field.focus(); }, 20);
+      function close() {
+        panel.classList.remove('on');
+        scrim.remove();
+        setTimeout(() => panel.remove(), 380);
+      }
+    }
+
+    return el('div.ob.login', {},
+      el('div.ob-spacer-top'),
+      el('img.ob-logo.small', { src: 'assets/img/logo-1024.png', alt: '' }),
+      el('h1.login-title', {}, 'Wren keeps what you tell it.'),
+      el('p.login-note', {}, "So tomorrow's three minutes still know who you are."),
+      el('div.ob-spacer-bottom'),
+      el('div.login-actions', {},
+        el('button.btn.dark', { type: 'button', onclick: () => enter(Auth.signInWithApple, 'Apple') }, 'Continue with Apple'),
+        el('button.btn.light', { type: 'button', onclick: () => enter(Auth.signInWithGoogle, 'Google') }, 'Continue with Google'),
+        el('button.btn-ghost.email', { type: 'button', onclick: emailSheet }, 'Use email instead'),
+        el('p.login-fine', {}, 'Only so your sessions come back to you.')));
   }
 
   /* ── 文字题（名字 / 工作）─────────────────────── */
@@ -264,12 +339,12 @@ const Onboarding = (() => {
      照片位是「她描述的那种生活」的脸。生成封面还没做，
      先用实拍图按她那段话选一张 —— 同一段话永远同一张。 */
   function promise() {
-    return el('div.ob', {},
+    return el('div.ob.promise', {},
       topbar('promise', () => go('ob-transcribed')),
       el('h1.ob-promise-q', {}, 'Ready to see the life you just described?'),
       el('div.ob-portrait', {}, el('img', { src: coverFor(S.profile.dream), alt: '' })),
       el('p.ob-portrait-note', {}, 'You can change it any time.'),
-      el('button.btn.ob-cta.promise', {
+      el('button.btn.ob-cta', {
         type: 'button',
         onclick: () => {
           S.onboarded = true; save();
@@ -282,8 +357,9 @@ const Onboarding = (() => {
   return {
     screens: {
       'ob-welcome': welcome,
+      'ob-login': login,
       'ob-name': () => textStep({
-        screen: 'name', field: 'name', next: 'ob-desire', back: 'ob-welcome',
+        screen: 'name', field: 'name', next: 'ob-desire', back: 'ob-login',
         question: 'What should Wren call\nyou?',
         note: 'Wren says it out loud before it goes.',
         placeholder: 'Maya'
