@@ -1,0 +1,5 @@
+.env
+!.env.example
+cache/
+.venv/
+.DS_Store

@@ -1,0 +1,9 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Wren Quiet Signal — App Icon</title>
+  <rect width="1024" height="1024" rx="224" fill="#35251F"/>
+  <circle cx="286" cy="278" r="76" fill="#E96F51"/>
+  <path d="M374 638L252 580L332 558L278 504L414 578L434 634L374 638Z" fill="#FFF8F1"/>
+  <path d="M348 640C376 578 426 506 506 464C558 436 618 440 654 476C676 496 690 518 700 538L762 558L698 586C696 642 666 688 618 714C558 748 478 746 414 708C386 692 364 670 348 640Z" fill="#FFF8F1"/>
+  <circle cx="622" cy="506" r="14" fill="#35251F"/>
+  <path d="M156 754H656C680 754 692 742 702 718C712 696 722 684 736 684C754 684 764 704 776 728C788 748 804 754 828 754H870" stroke="#FFF8F1" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

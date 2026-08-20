@@ -1,0 +1,10 @@
+<svg width="88" height="88" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- 圆盘取自 Figma 的 pause / 88，三角取自 Vision Picker 的 play / 63，等比缩到与 pause 字形同高。
+     设计稿里播放器永远是播放态，所以没有现成的 play/88 —— 这张是用同一套原件拼的。 -->
+<g id="play">
+<rect width="88" height="88" rx="44" fill="#FFF8F1"/>
+<g transform="translate(4.8 6.669) scale(1.1787)">
+<path d="M26.0153 21.4909V41.8506L42.9817 31.6707L26.0153 21.4909Z" fill="#35251F"/>
+</g>
+</g>
+</svg>

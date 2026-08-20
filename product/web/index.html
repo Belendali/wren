@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#C28061">
+<title>Wren</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,0..100,0..1;1,9..144,300..700,0..100,0..1&family=Inclusive+Sans:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="assets/img/logo-1024.png">
+</head>
+<body>
+
+<div id="device">
+  <div id="phone">
+    <div id="surface"></div>
+    <div id="grain"></div>
+    <div id="stage"></div>
+
+    <div class="statusbar" id="statusbar">
+      <span class="time" id="clock">7:42</span>
+      <span class="glyphs"><i style="width:15px"></i><i style="width:14px"></i><i style="width:22px"></i></span>
+    </div>
+    <div class="home-indicator" id="homeindicator"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script src="speech.js"></script>
+<script src="offline.js"></script>
+<script src="api.js"></script>
+<script src="audio.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
